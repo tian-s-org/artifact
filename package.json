@@ -12,8 +12,9 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "start": "pnpm --filter @artifact/local start",
-    "test": "pnpm --filter @artifact/local test",
+    "test": "pnpm -r test",
     "test:e2e": "pnpm --filter @artifact/local test:e2e",
+    "artifact": "pnpm --filter @artifact/cli dev --",
     "new-board": "pnpm --filter @artifact/local new-board",
     "versions": "pnpm --filter @artifact/local versions",
     "probe:zoom": "pnpm --filter @artifact/local probe:zoom"

@@ -1,0 +1,23 @@
+{
+  "name": "@artifact/cli",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "把 artifact 画布技能装进本地 Agent 技能库，并一键起本地画布",
+  "bin": {
+    "artifact": "./bin/artifact.mjs"
+  },
+  "scripts": {
+    "dev": "node --import tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test --import tsx tests/*.test.ts"
+  },
+  "dependencies": {
+    "tsx": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "~5.6.3"
+  }
+}

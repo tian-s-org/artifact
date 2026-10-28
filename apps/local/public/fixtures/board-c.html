@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<title>小尺寸画板</title>
+<style>
+  :root { --accent: #0f766e; --ink: #101413; --ink-2: #5f6b69; --line: rgba(0,0,0,.08); }
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; background: #f6f8f7; color: var(--ink);
+         font: 13px/1.55 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; }
+  .top { height: 52px; display: flex; align-items: center; justify-content: space-between;
+         padding: 0 24px; border-bottom: 1px solid var(--line); background: #fff; }
+  .top b { font-size: 14px; }
+  .top span { color: var(--ink-2); }
+  .body { padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+  .card h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; }
+  .row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .row span { color: var(--ink-2); }
+  .bar { height: 6px; border-radius: 3px; background: var(--accent); opacity: .18; margin-top: 10px; }
+  .bar.on { opacity: 1; width: 62%; }
+</style>
+</head>
+<body>
+  <div class="top"><b>Relay 收件箱</b><span>1024 × 768</span></div>
+  <div class="body">
+    <div class="card">
+      <h2>今日概览</h2>
+      <div class="row"><span>新会话</span><b>128</b></div>
+      <div class="row"><span>待回复</span><b>17</b></div>
+      <div class="row"><span>平均首响</span><b>3 分 12 秒</b></div>
+      <div class="bar on"></div>
+      <div class="bar"></div>
+    </div>
+    <div class="card">
+      <h2>同名 class 隔离</h2>
+      <p style="margin:0;color:var(--ink-2)">这块画板里的 <code>--accent</code> 是青绿色，
+      另外两块分别是蓝色和红色，互不影响。</p>
+      <div class="row" style="margin-top:12px"><span>画板宽度</span><b>1024</b></div>
+      <div class="row"><span>画板高度</span><b>768</b></div>
+    </div>
+  </div>
+</body>
+</html>

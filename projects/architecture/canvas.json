@@ -1,0 +1,42 @@
+{
+  "protocol": 1,
+  "id": "architecture",
+  "name": "内容平台架构",
+  "context": "context.md",
+  "designSystem": {
+    "tokens": "design-system/tokens.json",
+    "guidelines": "design-system/guidelines.md"
+  },
+  "boards": [
+    {
+      "id": "board-001",
+      "name": "系统总览",
+      "x": 0,
+      "y": 0,
+      "width": 1720,
+      "height": 1000,
+      "file": "artboards/board-001/index.html",
+      "order": 1
+    },
+    {
+      "id": "board-002",
+      "name": "请求时序",
+      "x": 1880,
+      "y": 0,
+      "width": 1440,
+      "height": 900,
+      "file": "artboards/board-002/index.html",
+      "order": 2
+    },
+    {
+      "id": "board-003",
+      "name": "部署拓扑",
+      "x": 3480,
+      "y": 0,
+      "width": 1600,
+      "height": 1000,
+      "file": "artboards/board-003/index.html",
+      "order": 3
+    }
+  ]
+}

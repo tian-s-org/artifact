@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<title>请求时序</title>
+<style>
+  :root {
+    --ink: #101318; --ink-2: #5b6470; --ink-3: #8b95a1;
+    --line: rgba(16, 19, 24, 0.12);
+    --accent: #0f766e; --warn: #b45309;
+    --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: #fff; color: var(--ink); font: 13px/1.55 var(--sans); }
+  header { display: flex; align-items: baseline; justify-content: space-between; padding: 28px 44px 18px; border-bottom: 1px solid var(--line); }
+  header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+  header .kicker { font: 11px/1 var(--mono); color: var(--ink-3); letter-spacing: .1em; text-transform: uppercase; }
+  main { flex: 1; display: grid; grid-template-columns: 1fr 300px; min-height: 0; }
+  .chart { display: grid; place-items: center; padding: 18px 24px; }
+  .chart svg { max-height: 100%; width: 100%; }
+  .lane { stroke: rgba(16,19,24,.16); stroke-width: 1; stroke-dasharray: 3 5; }
+  .actor { fill: #fff; stroke: rgba(16,19,24,.22); stroke-width: 1; }
+  .actor-hot { fill: #fff; stroke: var(--accent); stroke-width: 1.4; }
+  .actor-label { font: 12px var(--sans); fill: var(--ink); }
+  .actor-sub { font: 10px var(--mono); fill: var(--ink-3); }
+  .msg { stroke: rgba(16,19,24,.55); stroke-width: 1.1; fill: none; }
+  .msg-hot { stroke: var(--accent); stroke-width: 1.4; fill: none; }
+  .msg-dash { stroke: rgba(16,19,24,.4); stroke-width: 1.1; stroke-dasharray: 5 4; fill: none; }
+  .msg-label { font: 11.5px var(--sans); fill: var(--ink); }
+  .msg-note { font: 10.5px var(--mono); fill: var(--ink-3); }
+  .time { font: 10.5px var(--mono); fill: var(--ink-3); }
+  .phase { font: 10px var(--mono); fill: var(--ink-3); letter-spacing: .1em; }
+
+  aside { border-left: 1px solid var(--line); padding: 24px 28px; display: flex; flex-direction: column; gap: 20px; overflow: hidden; }
+  .section-title { font: 10.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .budget { display: flex; flex-direction: column; gap: 9px; }
+  .budget div { display: grid; grid-template-columns: 88px 1fr 44px; align-items: center; gap: 10px; font-size: 12px; }
+  .budget i { display: block; height: 8px; border-radius: 2px; background: var(--accent); }
+  .budget span { color: var(--ink-2); }
+  .budget em { font: 10.5px var(--mono); font-style: normal; color: var(--ink-3); text-align: right; }
+  .note { font-size: 12.5px; color: var(--ink-2); line-height: 1.75; }
+  .note b { color: var(--ink); font-weight: 600; }
+  footer { display: flex; justify-content: space-between; padding: 12px 44px; border-top: 1px solid var(--line); font: 11px/1 var(--mono); color: var(--ink-3); letter-spacing: .06em; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>首屏与增量推送的时序</h1>
+    <span class="kicker">content platform · board-002</span>
+  </header>
+
+  <main>
+    <section class="chart">
+      <svg viewBox="0 0 1080 660" role="img" aria-label="请求时序图">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(16,19,24,.55)"/>
+          </marker>
+          <marker id="arrow-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"/>
+          </marker>
+        </defs>
+
+        <!-- 参与者 -->
+        <g>
+          <rect class="actor" x="30" y="34" width="140" height="46" rx="3"/>
+          <text class="actor-label" x="100" y="55" text-anchor="middle">客户端</text>
+          <text class="actor-sub" x="100" y="70" text-anchor="middle">inbox / SSE</text>
+
+          <rect class="actor" x="220" y="34" width="140" height="46" rx="3"/>
+          <text class="actor-label" x="290" y="55" text-anchor="middle">边缘</text>
+          <text class="actor-sub" x="290" y="70" text-anchor="middle">CDN + 会话校验</text>
+
+          <rect class="actor-hot" x="410" y="34" width="140" height="46" rx="3"/>
+          <text class="actor-label" x="480" y="55" text-anchor="middle">API</text>
+          <text class="actor-sub" x="480" y="70" text-anchor="middle">只读副本</text>
+
+          <rect class="actor" x="600" y="34" width="140" height="46" rx="3"/>
+          <text class="actor-label" x="670" y="55" text-anchor="middle">Store</text>
+          <text class="actor-sub" x="670" y="70" text-anchor="middle">主库前置</text>
+
+          <rect class="actor" x="790" y="34" width="140" height="46" rx="3"/>
+          <text class="actor-label" x="860" y="55" text-anchor="middle">实时通道</text>
+          <text class="actor-sub" x="860" y="70" text-anchor="middle">pub/sub</text>
+
+          <rect class="actor" x="950" y="34" width="110" height="46" rx="3"/>
+          <text class="actor-label" x="1005" y="55" text-anchor="middle">Worker</text>
+          <text class="actor-sub" x="1005" y="70" text-anchor="middle">拉取 IMAP</text>
+        </g>
+
+        <!-- 生命线 -->
+        <line class="lane" x1="100" y1="80" x2="100" y2="620"/>
+        <line class="lane" x1="290" y1="80" x2="290" y2="620"/>
+        <line class="lane" x1="480" y1="80" x2="480" y2="620"/>
+        <line class="lane" x1="670" y1="80" x2="670" y2="620"/>
+        <line class="lane" x1="860" y1="80" x2="860" y2="620"/>
+        <line class="lane" x1="1005" y1="80" x2="1005" y2="620"/>
+
+        <text class="phase" x="30" y="118">首屏</text>
+
+        <!-- 1 -->
+        <line class="msg" x1="100" y1="140" x2="290" y2="140" marker-end="url(#arrow)"/>
+        <text class="msg-label" x="106" y="132">GET /inbox</text>
+        <text class="msg-note" x="106" y="155">If-None-Match: "v41"</text>
+        <text class="time" x="1000" y="132">0ms</text>
+
+        <!-- 2 -->
+        <line class="msg" x1="290" y1="196" x2="480" y2="196" marker-end="url(#arrow)"/>
+        <text class="msg-label" x="296" y="188">转发（缓存未命中）</text>
+        <text class="time" x="1000" y="188">6ms</text>
+
+        <!-- 3 -->
+        <line class="msg-hot" x1="480" y1="248" x2="670" y2="248" marker-end="url(#arrow-teal)"/>
+        <text class="msg-label" x="486" y="240">读 inbox_page(uid, limit 50)</text>
+        <text class="msg-note" x="486" y="263">只读副本 · 允许 200ms 陈旧</text>
+        <text class="time" x="1000" y="240">9ms</text>
+
+        <!-- 4 返回 -->
+        <line class="msg-dash" x1="670" y1="300" x2="480" y2="300" marker-end="url(#arrow)"/>
+        <text class="msg-label" x="486" y="292">50 行 · 12ms</text>
+        <text class="time" x="1000" y="292">21ms</text>
+
+        <!-- 5 -->
+        <line class="msg-dash" x1="480" y1="352" x2="290" y2="352" marker-end="url(#arrow)"/>
+        <text class="msg-label" x="296" y="344">200 + ETag: "v42"</text>
+        <text class="time" x="1000" y="344">34ms</text>
+
+        <line class="msg-dash" x1="290" y1="404" x2="100" y2="404" marker-end="url(#arrow)"/>
+        <text class="msg-label" x="106" y="396">body（gzip 后 18KB）</text>
+        <text class="time" x="1000" y="396">38ms</text>
+
+        <!-- 6 订阅 -->
+        <line class="msg" x1="100" y1="452" x2="860" y2="452" marker-end="url(#arrow)"/>
+        <text class="msg-label" x="106" y="444">EventSource /inbox/stream</text>
+        <text class="msg-note" x="106" y="467">之后再拉列表只用 If-None-Match，命中即 304</text>
+        <text class="time" x="1000" y="444">41ms</text>
+
+        <text class="phase" x="30" y="500">增量</text>
+
+        <line class="msg-hot" x1="1005" y1="524" x2="860" y2="524" marker-end="url(#arrow-teal)"/>
+        <text class="msg-label" x="866" y="516" text-anchor="end" transform="translate(130 0)">新邮件 → publish inbox:42</text>
+        <text class="msg-note" x="866" y="547">Worker 每 15 秒轮询一次 IMAP IDLE</text>
+        <text class="time" x="1000" y="516">+1.8s</text>
+
+        <line class="msg-hot" x1="860" y1="588" x2="100" y2="588" marker-end="url(#arrow-teal)"/>
+        <text class="msg-label" x="106" y="580">push {id, 摘要} → 客户端插到列表顶部</text>
+        <text class="msg-note" x="106" y="603">不重新请求列表；正文在点开时才取</text>
+        <text class="time" x="1000" y="580">+1.9s</text>
+      </svg>
+    </section>
+
+    <aside>
+      <div>
+        <span class="section-title">延迟预算</span>
+        <div class="budget" style="margin-top:10px">
+          <div><i style="width:12px"></i><span>边缘转发生效</span><em>6ms</em></div>
+          <div><i style="width:24px"></i><span>副本查询</span><em>12ms</em></div>
+          <div><i style="width:38px"></i><span>序列化 + gzip</span><em>17ms</em></div>
+          <div><i style="width:8px"></i><span>网络回程</span><em>4ms</em></div>
+        </div>
+        <p class="note" style="margin-top:8px">首屏 <b>38ms</b>，预算 120ms。超过就说明缓存没命中或序列化太重。</p>
+      </div>
+
+      <div>
+        <span class="section-title">要点</span>
+        <p class="note" style="margin-top:6px">
+          <b>1</b> 列表只发摘要，正文按需取——首屏包体从 210KB 降到 18KB。<br><br>
+          <b>2</b> ETag 按「用户 + 最新消息 id」生成，任何新消息都会让旧 ETag 失效。<br><br>
+          <b>3</b> 增量走 SSE 不走轮询；断线重连时带 Last-Event-ID 补发。
+        </p>
+      </div>
+
+      <div>
+        <span class="section-title">已知取舍</span>
+        <p class="note" style="margin-top:6px">副本延迟会让「刚标记已读又刷新」出现回退，写入后 800ms 内强制读主库。</p>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <span>content-platform / board-002</span>
+    <span>时间轴为本地实测，非理论值</span>
+  </footer>
+</body>
+</html>

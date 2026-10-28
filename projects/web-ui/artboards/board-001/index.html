@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<title>Relay · 三栏主界面</title>
+<style>
+  /* 这块画板的 .accent 是蓝色；同一项目里别的画板用同名的 class，值不同，互不影响 */
+  :root {
+    --ink: #12161c; --ink-2: #5d6673; --ink-3: #8d95a1;
+    --line: rgba(18, 22, 28, 0.1);
+    --accent: #2563eb; --accent-soft: rgba(37, 99, 235, 0.1);
+    --side: #f7f8fa;
+    --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: #fff; color: var(--ink); font: 13px/1.55 var(--sans); }
+
+  .top {
+    display: flex; align-items: center; gap: 14px; height: 52px; padding: 0 16px;
+    border-bottom: 1px solid var(--line); background: #fff;
+  }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; }
+  .brand svg { display: block; }
+  .search { flex: 1; max-width: 420px; height: 30px; padding: 0 11px; display: flex; align-items: center;
+            gap: 7px; border-radius: 7px; background: var(--side); color: var(--ink-3); font-size: 12.5px; }
+  .top .spacer { flex: 1; }
+  .btn { height: 28px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 7px;
+         border: 1px solid var(--line); background: #fff; color: var(--ink); font-size: 12.5px; }
+  .btn.primary { border-color: transparent; background: var(--accent); color: #fff; font-weight: 500; }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent);
+            display: grid; place-items: center; font-size: 11px; font-weight: 600; }
+
+  .main { flex: 1; display: grid; grid-template-columns: 216px 360px 1fr; min-height: 0; }
+
+  .side { border-right: 1px solid var(--line); background: var(--side); padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; }
+  .side .item { display: flex; align-items: center; justify-content: space-between; height: 30px; padding: 0 10px;
+                border-radius: 6px; color: var(--ink-2); }
+  .side .item .accent { color: var(--accent); font-weight: 600; }
+  .side .item.on { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+  .side .item em { font: 10.5px/1 var(--mono); font-style: normal; color: var(--ink-3); }
+  .side .item.on em { color: var(--accent); }
+  .side .group { margin: 14px 10px 6px; font: 10px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+  .side .tag { display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 10px; color: var(--ink-2); font-size: 12.5px; }
+  .side .tag i { width: 7px; height: 7px; border-radius: 2px; background: var(--accent); opacity: .5; }
+
+  .list { border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+  .list .head { display: flex; align-items: baseline; justify-content: space-between; padding: 13px 16px 10px; }
+  .list .head b { font-size: 13.5px; font-weight: 600; }
+  .list .head span { font: 10.5px/1 var(--mono); color: var(--ink-3); }
+  .rows { flex: 1; overflow: hidden; }
+  .row { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; padding: 11px 16px; border-top: 1px solid var(--line); }
+  .row.on { background: var(--accent-soft); }
+  .row .dot { width: 7px; height: 7px; margin-top: 6px; border-radius: 50%; background: var(--accent); }
+  .row.read .dot { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+  .row .who { display: flex; align-items: baseline; gap: 8px; }
+  .row .who b { font-size: 12.5px; font-weight: 600; }
+  .row .who span { font: 10.5px var(--mono); color: var(--ink-3); }
+  .row .subject { margin-top: 2px; font-size: 12.5px; color: var(--ink); }
+  .row .preview { margin-top: 2px; font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .stamp { font: 10.5px/1 var(--mono); color: var(--ink-3); padding-top: 2px; }
+
+  .pane { padding: 0; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .pane .subject-line { padding: 18px 28px 14px; border-bottom: 1px solid var(--line); }
+  .pane h1 { margin: 0 0 10px; font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
+  .pane .meta { display: flex; align-items: center; gap: 10px; color: var(--ink-2); font-size: 12px; }
+  .pane .meta .avatar { background: var(--accent-soft); color: var(--accent); }
+  .pane .tools { margin-left: auto; display: flex; gap: 6px; }
+  .pane .body { padding: 22px 28px; font-size: 13.5px; line-height: 1.85; color: var(--ink); overflow: hidden; }
+  .pane .body p { margin: 0 0 14px; }
+  .pane .body .quote { margin: 0 0 16px; padding: 10px 14px; border-left: 2px solid var(--accent); background: var(--side); color: var(--ink-2); font-size: 13px; }
+  .pane .body ul { margin: 0 0 14px; padding-left: 20px; color: var(--ink-2); }
+  .pane .body li { margin-bottom: 5px; }
+  .pane .attachments { display: flex; gap: 10px; margin-top: 4px; }
+  .pane .att { display: flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 7px; font-size: 12px; color: var(--ink-2); }
+  .pane .att b { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+  .pane .reply { margin-top: auto; padding: 14px 28px 20px; border-top: 1px solid var(--line); }
+  .pane .reply .field { min-height: 66px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink-3); font-size: 12.5px; }
+  .pane .reply .bar { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .pane .reply .bar .hint { margin-left: auto; font: 10.5px/1 var(--mono); color: var(--ink-3); }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+        <rect x="1" y="1" width="16" height="16" rx="4" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+        <path d="M4 9h10M9 4v10" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      Relay
+    </div>
+    <div class="search">搜索邮件、联系人、附件…</div>
+    <div class="spacer"></div>
+    <span class="btn">筛选</span>
+    <span class="btn primary">撰写</span>
+    <span class="avatar">林</span>
+  </div>
+
+  <div class="main">
+    <aside class="side">
+      <div class="item on"><span class="accent">收件箱</span><em>17</em></div>
+      <div class="item"><span>待处理</span><em>6</em></div>
+      <div class="item"><span>已发送</span></div>
+      <div class="item"><span>草稿</span><em>2</em></div>
+      <div class="group">标签</div>
+      <div class="tag"><i></i>客户</div>
+      <div class="tag"><i style="opacity:.32"></i>供应商</div>
+      <div class="tag"><i style="opacity:.22"></i>内部</div>
+      <div class="group">账号</div>
+      <div class="tag">lin@relay.app</div>
+      <div class="tag">support@relay.app</div>
+    </aside>
+
+    <section class="list">
+      <div class="head"><b>收件箱</b><span>未读 17 · 共 328</span></div>
+      <div class="rows">
+        <div class="row on"><span class="dot"></span>
+          <div>
+            <div class="who"><b>周明远</b><span>· 华宸物流</span></div>
+            <div class="subject">第三批货的报关单需要改口岸</div>
+            <div class="preview">原本走的是宁波，现在船期提前，要改到上海浦东……</div>
+          </div>
+          <span class="stamp">09:41</span>
+        </div>
+        <div class="row"><span class="dot"></span>
+          <div>
+            <div class="who"><b>Amelia Chen</b><span>· Northwind</span></div>
+            <div class="subject">Re: Q4 pricing sheet — two open questions</div>
+            <div class="preview">Thanks for turning this around so fast. On the volume tier…</div>
+          </div>
+          <span class="stamp">08:12</span>
+        </div>
+        <div class="row"><span class="dot"></span>
+          <div>
+            <div class="who"><b>系统通知</b><span>· Relay</span></div>
+            <div class="subject">10 月账单已生成（¥ 1,284.00）</div>
+            <div class="preview">本期含 6 个席位、1 个共享域名，超量 3.2 万封……</div>
+          </div>
+          <span class="stamp">昨天</span>
+        </div>
+        <div class="row read"><span class="dot"></span>
+          <div>
+            <div class="who"><b>许晨</b><span>· 团队</span></div>
+            <div class="subject">周会改到周四下午三点</div>
+            <div class="preview">这周临时有客户来访，先挪一次……</div>
+          </div>
+          <span class="stamp">昨天</span>
+        </div>
+        <div class="row read"><span class="dot"></span>
+          <div>
+            <div class="who"><b>陈嘉禾</b><span>· 财务</span></div>
+            <div class="subject">付款审批已通过（单号 FY-24101）</div>
+            <div class="preview">附件是盖章版审批单，请转给出纳……</div>
+          </div>
+          <span class="stamp">10月27日</span>
+        </div>
+        <div class="row read"><span class="dot"></span>
+          <div>
+            <div class="who"><b>GitHub</b><span>· notifications</span></div>
+            <div class="subject">[relay/inbox] 3 new pull requests</div>
+            <div class="preview">feat(search): rank by recency · fix(sse): reconnect…</div>
+          </div>
+          <span class="stamp">10月27日</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane">
+      <div class="subject-line">
+        <h1>第三批货的报关单需要改口岸</h1>
+        <div class="meta">
+          <span class="avatar">周</span>
+          <span>周明远 &lt;zhou.my@huachen-logi.com&gt;</span>
+          <span>· 09:41</span>
+          <div class="tools"><span class="btn">回复</span><span class="btn">转发</span></div>
+        </div>
+      </div>
+      <div class="body">
+        <p>林小姐，</p>
+        <p>第三批货原定 11 月 6 日从宁波出，现在船公司把班期提前到 11 月 2 日，我们想改从上海浦东走，报关单上的口岸需要同步修改。</p>
+        <div class="quote">
+          原报关单号：3104202610231187<br>
+          原口岸：宁波 · 改后口岸：上海浦东<br>
+          截关时间：11 月 1 日 18:00
+        </div>
+        <p>需要你们配合的两件事：</p>
+        <ul>
+          <li>更新随附的合同扫描件，口岸一栏改成浦东</li>
+          <li>在今天 17:00 前把改动版回传，我们要赶上明天的申报批次</li>
+        </ul>
+        <p>附件是我们这边的改单申请和新的船期通知。</p>
+        <div class="attachments">
+          <div class="att"><b>PDF</b>改单申请_2410.pdf · 218 KB</div>
+          <div class="att"><b>PDF</b>船期通知_1102.pdf · 96 KB</div>
+        </div>
+      </div>
+      <div class="reply">
+        <div class="field">回复周明远…</div>
+        <div class="bar">
+          <span class="btn primary">发送</span>
+          <span class="btn">存为草稿</span>
+          <span class="hint">⌘ + Enter 发送</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<title>包装刀版线</title>
+<style>
+  :root {
+    --ink: #1b1410; --ink-2: #6b5c50; --ink-3: #9a8a7c;
+    --line: rgba(27, 20, 16, 0.12);
+    --accent: #b45309; --paper: #f7f2ea;
+    --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: #fff; color: var(--ink); font: 14px/1.6 var(--sans); }
+  header { display: flex; align-items: baseline; justify-content: space-between; padding: 34px 52px 22px; border-bottom: 1px solid var(--line); }
+  header h1 { margin: 0; font-size: 22px; font-weight: 600; }
+  header .kicker { font: 11px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+  main { flex: 1; display: grid; grid-template-columns: 1fr 340px; min-height: 0; }
+  .sheet { display: grid; place-items: center; background: var(--paper); border-right: 1px solid var(--line); padding: 28px; }
+  .sheet svg { max-height: 100%; }
+  .cut { fill: none; stroke: var(--ink); stroke-width: 2; }
+  .fold { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 9 6; }
+  .safe { fill: none; stroke: rgba(27,20,16,.22); stroke-width: 1; stroke-dasharray: 3 5; }
+  .dim { stroke: rgba(27,20,16,.35); stroke-width: 1; fill: none; }
+  .dim-text { font: 11px var(--mono); fill: var(--ink-2); }
+  .panel-label { font: 11px var(--mono); fill: var(--ink-3); letter-spacing: .06em; }
+
+  aside { padding: 32px 40px 24px 38px; display: flex; flex-direction: column; gap: 22px; overflow: hidden; }
+  .section-title { font: 11px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { text-align: left; padding: 7px 0; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+  th { font-weight: 500; color: var(--ink-2); width: 96px; }
+  td { font-family: var(--mono); font-size: 11.5px; color: var(--ink); }
+  .legend { display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; color: var(--ink-2); }
+  .legend div { display: flex; align-items: center; gap: 10px; }
+  .legend i { display: block; width: 30px; height: 0; border-top-width: 2px; }
+  .note { font-size: 12.5px; color: var(--ink-2); line-height: 1.7; }
+  footer { display: flex; justify-content: space-between; padding: 14px 52px; border-top: 1px solid var(--line); font: 11px/1 var(--mono); color: var(--ink-3); letter-spacing: 0.06em; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>包装刀版线</h1>
+    <span class="kicker">Northstar · 200g 豆袋 · 03</span>
+  </header>
+
+  <main>
+    <section class="sheet">
+      <svg viewBox="0 0 900 740" width="820" height="674" role="img" aria-label="豆袋刀版线">
+        <!-- 出血：四周 3mm -->
+        <rect class="safe" x="134" y="98" width="592" height="568"/>
+
+        <!-- 刀线：整体外轮廓（背面 · 侧裥 · 正面 · 侧裥，含上下折翼） -->
+        <path class="cut" d="M 140 104 H 720 V 660 H 140 Z"/>
+
+        <!-- 面板分界 -->
+        <line class="fold" x1="350" y1="104" x2="350" y2="660"/>
+        <line class="fold" x1="430" y1="104" x2="430" y2="660"/>
+        <line class="fold" x1="640" y1="104" x2="640" y2="660"/>
+        <!-- 侧裥中线（风琴折） -->
+        <line class="fold" x1="390" y1="104" x2="390" y2="660"/>
+        <line class="fold" x1="680" y1="104" x2="680" y2="660"/>
+
+        <!-- 上折翼（封口）与下折翼（底封） -->
+        <line class="fold" x1="140" y1="160" x2="720" y2="160"/>
+        <line class="fold" x1="140" y1="584" x2="720" y2="584"/>
+        <line class="fold" x1="140" y1="132" x2="720" y2="132"/>
+        <line class="fold" x1="140" y1="622" x2="720" y2="622"/>
+
+        <!-- 单向阀位 -->
+        <circle cx="535" cy="215" r="21" fill="none" stroke="var(--ink-2)" stroke-width="1" stroke-dasharray="4 4"/>
+        <text class="panel-label" x="535" y="219" text-anchor="middle">阀</text>
+
+        <!-- 横向尺寸 -->
+        <g>
+          <path class="dim" d="M 140 686 H 350 M 140 680 V 692 M 350 680 V 692"/>
+          <text class="dim-text" x="232" y="706">105</text>
+          <path class="dim" d="M 350 686 H 430 M 430 680 V 692"/>
+          <text class="dim-text" x="382" y="706">40</text>
+          <path class="dim" d="M 430 686 H 640 M 640 680 V 692"/>
+          <text class="dim-text" x="524" y="706">105</text>
+          <path class="dim" d="M 640 686 H 720 M 720 680 V 692"/>
+          <text class="dim-text" x="672" y="706">40</text>
+        </g>
+        <!-- 纵向尺寸 -->
+        <g>
+          <path class="dim" d="M 760 160 V 584 M 754 160 H 766 M 754 584 H 766"/>
+          <text class="dim-text" x="770" y="376">212</text>
+          <path class="dim" d="M 760 104 V 160 M 754 104 H 766"/>
+          <text class="dim-text" x="770" y="136">28</text>
+          <path class="dim" d="M 760 584 V 660"/>
+          <text class="dim-text" x="770" y="626">38</text>
+        </g>
+
+        <text class="panel-label" x="245" y="380" text-anchor="middle">背面</text>
+        <text class="panel-label" x="390" y="380" text-anchor="middle" transform="rotate(90 390 380)">侧裥</text>
+        <text class="panel-label" x="535" y="380" text-anchor="middle">正面</text>
+        <text class="panel-label" x="680" y="380" text-anchor="middle" transform="rotate(90 680 380)">侧裥</text>
+        <text class="panel-label" x="430" y="150">上折翼 · 单向阀位</text>
+        <text class="panel-label" x="430" y="612">下折翼 · 底部热封</text>
+      </svg>
+    </section>
+
+    <aside>
+      <div>
+        <span class="section-title">图例</span>
+        <div class="legend" style="margin-top:10px">
+          <div><i style="border-top:2px solid var(--ink)"></i>刀线（模切）</div>
+          <div><i style="border-top:1.4px dashed var(--accent)"></i>压痕线（折叠）</div>
+          <div><i style="border-top:1px dashed rgba(27,20,16,.3)"></i>出血 / 安全区</div>
+        </div>
+      </div>
+
+      <div>
+        <span class="section-title">规格</span>
+        <table style="margin-top:6px">
+          <tr><th>成品尺寸</th><td>105 × 40 × 212 mm</td></tr>
+          <tr><th>展开尺寸</th><td>245 × 268 mm</td></tr>
+          <tr><th>材料</th><td>牛皮纸复合铝 120g</td></tr>
+          <tr><th>印刷</th><td>单色墨 + 专色琥珀</td></tr>
+          <tr><th>阀</th><td>单向排气阀 Ø 21，居中偏上 28</td></tr>
+          <tr><th>圆角</th><td>折角 R2，刀模 R0.5</td></tr>
+        </table>
+      </div>
+
+      <p class="note">
+        正面只放标志与产地，烘焙信息全部移到背面下三分之一。侧裥宽度 40 是上限：
+        再宽豆袋立不稳，再窄装不进 200g 豆。
+      </p>
+
+      <div>
+        <span class="section-title">工序</span>
+        <p class="note" style="margin-top:6px">
+          1 · 印刷（正反同时）<br>
+          2 · 复合铝层<br>
+          3 · 模切 + 压痕<br>
+          4 · 装阀<br>
+          5 · 制袋（侧裥先合）<br>
+          6 · 底部热封 38mm
+        </p>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <span>northstar / board-003</span>
+    <span>单位 mm · 1:1 比例</span>
+  </footer>
+</body>
+</html>

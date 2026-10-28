@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<title>部署拓扑</title>
+<style>
+  :root {
+    --ink: #101318; --ink-2: #5b6470; --ink-3: #8b95a1;
+    --line: rgba(16, 19, 24, 0.12);
+    --accent: #0f766e; --warn: #b45309; --ground: #f4f6f8;
+    --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: #fff; color: var(--ink); font: 13px/1.55 var(--sans); }
+  header { display: flex; align-items: baseline; justify-content: space-between; padding: 28px 44px 18px; border-bottom: 1px solid var(--line); }
+  header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+  header .kicker { font: 11px/1 var(--mono); color: var(--ink-3); letter-spacing: .1em; text-transform: uppercase; }
+  main { flex: 1; display: grid; grid-template-columns: 1fr 320px; min-height: 0; }
+  .diagram { display: grid; place-items: center; padding: 20px 26px; background: var(--ground); border-right: 1px solid var(--line); }
+  .diagram svg { max-height: 100%; width: 100%; }
+  .zone { fill: rgba(255,255,255,.6); stroke: rgba(16,19,24,.14); stroke-width: 1; stroke-dasharray: 5 5; }
+  .zone-label { font: 10px var(--mono); fill: var(--ink-3); letter-spacing: .1em; }
+  .node { fill: #fff; stroke: rgba(16,19,24,.2); stroke-width: 1; }
+  .node-hot { fill: #fff; stroke: var(--accent); stroke-width: 1.5; }
+  .node-warn { fill: #fff; stroke: var(--warn); stroke-width: 1; stroke-dasharray: 4 3; }
+  .node-label { font: 12px var(--sans); fill: var(--ink); }
+  .node-sub { font: 10px var(--mono); fill: var(--ink-3); }
+  .link { stroke: rgba(16,19,24,.35); stroke-width: 1.1; fill: none; }
+  .link-hot { stroke: var(--accent); stroke-width: 1.3; fill: none; }
+  .stack-note { font: 10px var(--mono); fill: var(--ink-3); }
+
+  aside { padding: 24px 28px; display: flex; flex-direction: column; gap: 18px; overflow: hidden; }
+  .section-title { font: 10.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { text-align: left; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  th { font-weight: 400; color: var(--ink-3); font-family: var(--mono); font-size: 10.5px; width: 92px; }
+  td { color: var(--ink-2); font-family: var(--mono); font-size: 11.5px; }
+  .note { font-size: 12.5px; color: var(--ink-2); line-height: 1.75; }
+  .note b { color: var(--ink); font-weight: 600; }
+  footer { display: flex; justify-content: space-between; padding: 12px 44px; border-top: 1px solid var(--line); font: 11px/1 var(--mono); color: var(--ink-3); letter-spacing: .06em; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>部署拓扑</h1>
+    <span class="kicker">content platform · board-003</span>
+  </header>
+
+  <main>
+    <section class="diagram">
+      <svg viewBox="0 0 1120 700" role="img" aria-label="部署拓扑图">
+        <!-- 用户 -->
+        <rect class="zone" x="24" y="60" width="150" height="380" rx="6"/>
+        <text class="zone-label" x="38" y="82">USER</text>
+        <rect class="node" x="46" y="112" width="106" height="52" rx="3"/>
+        <text class="node-label" x="99" y="134" text-anchor="middle">浏览器</text>
+        <text class="node-sub" x="99" y="150" text-anchor="middle">SSE 长连接</text>
+        <rect class="node" x="46" y="196" width="106" height="52" rx="3"/>
+        <text class="node-label" x="99" y="218" text-anchor="middle">移动端</text>
+        <text class="node-sub" x="99" y="234" text-anchor="middle">push 降级</text>
+        <rect class="node" x="46" y="300" width="106" height="52" rx="3"/>
+        <text class="node-label" x="99" y="322" text-anchor="middle">IMAP 客户端</text>
+        <text class="node-sub" x="99" y="338" text-anchor="middle">第三方</text>
+
+        <!-- 边缘 -->
+        <rect class="zone" x="204" y="60" width="190" height="380" rx="6"/>
+        <text class="zone-label" x="218" y="82">EDGE · 全球</text>
+        <rect class="node" x="222" y="112" width="154" height="52" rx="3"/>
+        <text class="node-label" x="299" y="134" text-anchor="middle">CDN</text>
+        <text class="node-sub" x="299" y="150" text-anchor="middle">静态资源 · 1 年缓存</text>
+        <rect class="node-hot" x="222" y="196" width="154" height="52" rx="3"/>
+        <text class="node-label" x="299" y="218" text-anchor="middle">WAF + LB</text>
+        <text class="node-sub" x="299" y="234" text-anchor="middle">限流 200 rps / IP</text>
+        <rect class="node-warn" x="222" y="300" width="154" height="52" rx="3"/>
+        <text class="node-label" x="299" y="322" text-anchor="middle">证书 / 域名</text>
+        <text class="node-sub" x="299" y="338" text-anchor="middle">自动续期</text>
+
+        <!-- 应用区 -->
+        <rect class="zone" x="424" y="60" width="330" height="380" rx="6"/>
+        <text class="zone-label" x="438" y="82">APP · 区域 A · 无状态</text>
+
+        <rect class="node" x="444" y="104" width="130" height="52" rx="3"/>
+        <text class="node-label" x="509" y="126" text-anchor="middle">api-1</text>
+        <text class="node-sub" x="509" y="142" text-anchor="middle">2 vCPU · 2 GB</text>
+        <rect class="node" x="586" y="104" width="130" height="52" rx="3"/>
+        <text class="node-label" x="651" y="126" text-anchor="middle">api-2</text>
+        <text class="node-sub" x="651" y="142" text-anchor="middle">2 vCPU · 2 GB</text>
+        <rect class="node" x="444" y="176" width="130" height="52" rx="3"/>
+        <text class="node-label" x="509" y="198" text-anchor="middle">api-3（备用）</text>
+        <text class="node-sub" x="509" y="214" text-anchor="middle">滚动发布时顶上</text>
+
+        <rect class="node" x="444" y="256" width="130" height="52" rx="3"/>
+        <text class="node-label" x="509" y="278" text-anchor="middle">worker-1</text>
+        <text class="node-sub" x="509" y="294" text-anchor="middle">IMAP 拉取</text>
+        <rect class="node" x="586" y="256" width="130" height="52" rx="3"/>
+        <text class="node-label" x="651" y="278" text-anchor="middle">worker-2</text>
+        <text class="node-sub" x="651" y="294" text-anchor="middle">索引重建</text>
+
+        <rect class="node" x="444" y="336" width="272" height="46" rx="3"/>
+        <text class="node-label" x="580" y="358" text-anchor="middle">实时通道 · 2 实例</text>
+        <text class="node-sub" x="580" y="373" text-anchor="middle">按用户 id 一致性哈希，扩缩容会短暂重连</text>
+
+        <!-- 数据区 -->
+        <rect class="zone" x="784" y="60" width="312" height="380" rx="6"/>
+        <text class="zone-label" x="798" y="82">DATA · 区域 A</text>
+        <rect class="node-hot" x="802" y="104" width="130" height="52" rx="3"/>
+        <text class="node-label" x="867" y="126" text-anchor="middle">PG 主库</text>
+        <text class="node-sub" x="867" y="142" text-anchor="middle">4 vCPU · 16 GB · SSD</text>
+        <rect class="node" x="946" y="104" width="130" height="52" rx="3"/>
+        <text class="node-label" x="1011" y="126" text-anchor="middle">PG 只读副本</text>
+        <text class="node-sub" x="1011" y="142" text-anchor="middle">延迟 50–200ms</text>
+        <rect class="node" x="802" y="176" width="130" height="52" rx="3"/>
+        <text class="node-label" x="867" y="198" text-anchor="middle">Redis</text>
+        <text class="node-sub" x="867" y="214" text-anchor="middle">队列 · 会话 · 限流</text>
+        <rect class="node" x="946" y="176" width="130" height="52" rx="3"/>
+        <text class="node-label" x="1011" y="198" text-anchor="middle">对象存储</text>
+        <text class="node-sub" x="1011" y="214" text-anchor="middle">附件 · 原邮件存档</text>
+        <rect class="node" x="802" y="256" width="274" height="52" rx="3"/>
+        <text class="node-label" x="939" y="278" text-anchor="middle">OpenSearch</text>
+        <text class="node-sub" x="939" y="294" text-anchor="middle">2 节点 · 每天 03:00 全量重建</text>
+        <rect class="node-warn" x="802" y="336" width="274" height="46" rx="3"/>
+        <text class="node-label" x="939" y="358" text-anchor="middle">备份桶 · 跨区</text>
+        <text class="node-sub" x="939" y="373" text-anchor="middle">WAL 归档 5 分钟一次 · 保留 30 天</text>
+
+        <!-- 连线 -->
+        <line class="link" x1="152" y1="138" x2="222" y2="138"/>
+        <line class="link" x1="152" y1="222" x2="222" y2="222"/>
+        <line class="link" x1="152" y1="326" x2="376" y2="326" stroke-dasharray="4 3"/>
+        <line class="link-hot" x1="376" y1="222" x2="444" y2="130"/>
+        <line class="link-hot" x1="376" y1="222" x2="444" y2="202"/>
+        <line class="link" x1="376" y1="240" x2="444" y2="359"/>
+        <line class="link" x1="574" y1="130" x2="802" y2="130"/>
+        <line class="link" x1="574" y1="130" x2="946" y2="130"/>
+        <line class="link" x1="706" y1="130" x2="802" y2="202"/>
+        <line class="link" x1="574" y1="282" x2="802" y2="202"/>
+        <line class="link" x1="574" y1="282" x2="1011" y2="202"/>
+        <line class="link" x1="706" y1="282" x2="802" y2="282"/>
+        <line class="link" x1="867" y1="156" x2="939" y2="336" stroke-dasharray="4 3"/>
+
+        <text class="stack-note" x="600" y="440">箭头只画数据流方向；发布顺序：DB 迁移 → 副本 → API → Worker → 实时通道</text>
+      </svg>
+    </section>
+
+    <aside>
+      <div>
+        <span class="section-title">规模</span>
+        <table style="margin-top:6px">
+          <tr><th>日活</th><td>48,000</td></tr>
+          <tr><th>峰值 rps</th><td>210</td></tr>
+          <tr><th>邮件/日</th><td>1.1M</td></tr>
+          <tr><th>存储增长</th><td>≈ 38 GB / 月</td></tr>
+          <tr><th>SSE 并发</th><td>9,600</td></tr>
+        </table>
+      </div>
+
+      <div>
+        <span class="section-title">故障模式</span>
+        <p class="note" style="margin-top:6px">
+          <b>副本挂掉</b> → API 降级直连主库，写入排队 30 秒。<br><br>
+          <b>Redis 挂掉</b> → 会话回落到 cookie 校验，实时通道停止推送，列表退化为 15 秒轮询。<br><br>
+          <b>主库挂掉</b> → 提升副本，代价是丢失最近 5 分钟 WAL。
+        </p>
+      </div>
+
+      <div>
+        <span class="section-title">不做</span>
+        <p class="note" style="margin-top:6px">多活、跨区域写入、自建对象存储。区域 B 只放 CDN 回源。</p>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <span>content-platform / board-003</span>
+    <span>单区域多可用区 · 不用 K8s</span>
+  </footer>
+</body>
+</html>

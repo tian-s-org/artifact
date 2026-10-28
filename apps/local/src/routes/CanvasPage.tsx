@@ -11,7 +11,10 @@ interface Props {
 
 export function CanvasPage({ projectId }: Props) {
   const { store, state } = useProject(projectId)
-  const boards = useMemo(() => boardsToViews(projectId, state.canvas, state.meta), [projectId, state.canvas, state.meta])
+  const boards = useMemo(
+    () => boardsToViews(projectId, state.canvas, state.meta, state.filesBase),
+    [projectId, state.canvas, state.meta, state.filesBase],
+  )
   const [focusedId, setFocusedId] = useState<string | null>(null)
   const [versionsOpen, setVersionsOpen] = useState(false)
 

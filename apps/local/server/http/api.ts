@@ -5,7 +5,7 @@ import { isId } from '../../shared/canvas-schema'
 import type { FsStorageProvider } from '../storage/fs-storage'
 import { CANVAS_FILE } from '../storage/project-repo'
 import type { EventProvider, ProjectRepository } from '../storage/types'
-import type { FsVersionStore } from '../storage/versions'
+import { VERSIONS_INDEX, type FsVersionStore } from '../storage/versions'
 import { fail, HttpError, json, readJson, toHttpError } from './respond'
 
 export interface ApiContext {
@@ -35,6 +35,14 @@ export async function handleApi(
     if (segments.length === 1) {
       if (method !== 'GET') throw new HttpError(405, 'method', '不支持的方法')
       json(res, 200, { ok: true })
+      return
+    }
+
+    // 前端据此判断走 SSE 还是轮询；本地永远是 SSE，也没有门禁。
+    // 接口名叫 meta 不叫 config：Cloudflare 的 WAF 会拦掉路径里带 config 的请求
+    if (segments[1] === 'meta' && segments.length === 2) {
+      if (method !== 'GET') throw new HttpError(405, 'method', '不支持的方法')
+      json(res, 200, { cloud: false, gated: false, canWrite: true })
       return
     }
 
@@ -72,7 +80,13 @@ export async function handleApi(
         boards.push({ id: board.id, mtime: version?.mtime ?? 0, exists: version !== null })
       }
       const canvasVersion = await ctx.storage.getVersion(path.posix.join(projectId, CANVAS_FILE))
-      json(res, 200, { canvas, boards, canvasMtime: canvasVersion?.mtime ?? 0 })
+      const versionsVersion = await ctx.storage.getVersion(path.posix.join(projectId, VERSIONS_INDEX))
+      json(res, 200, {
+        canvas,
+        boards,
+        canvasMtime: canvasVersion?.mtime ?? 0,
+        versionsMtime: versionsVersion?.mtime ?? 0,
+      })
       return
     }
 
@@ -98,7 +112,8 @@ export async function handleApi(
     if (segments.length === 5 && segments[3] === 'boards') {
       const boardId = segments[4] ?? ''
       if (!isId(boardId)) throw new HttpError(400, 'invalid', '画板 id 不合法')
-      if (method === 'PATCH') {
+      // POST 与 PATCH 等价：Cloudflare 会把 PATCH/PUT/DELETE 直接拦在边缘（403）
+      if (method === 'PATCH' || method === 'POST') {
         const body = (await readJson(req)) as Record<string, unknown>
         const { x, y } = body
         if (typeof x !== 'number' || typeof y !== 'number') throw new HttpError(400, 'invalid', '需要数字 x 与 y')

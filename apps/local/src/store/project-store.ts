@@ -9,6 +9,7 @@ import type { CanvasDoc } from '@shared/canvas-schema'
 import {
   ApiError,
   boardSrc,
+  defaultFilesBase,
   fetchProject,
   moveBoard as patchBoardPosition,
   subscribeProject,
@@ -22,6 +23,8 @@ export interface ProjectState {
   meta: Record<string, BoardMeta>
   error: { code: string; message: string } | null
   connected: boolean
+  /** 画板文件基地址：本地是 /files/<id>，云端是独立沙箱源上的地址 */
+  filesBase: string
   /** 每保存/恢复一次版本就 +1，版本面板据此重新拉列表 */
   versionTick: number
 }
@@ -32,6 +35,7 @@ const INITIAL: ProjectState = {
   meta: {},
   error: null,
   connected: false,
+  filesBase: '',
   versionTick: 0,
 }
 
@@ -104,7 +108,13 @@ export class ProjectStore {
       if (this.stopped) return
       const meta: Record<string, BoardMeta> = {}
       for (const board of payload.boards) meta[board.id] = board
-      this.set({ status: 'ready', canvas: payload.canvas, meta, error: null })
+      this.set({
+        status: 'ready',
+        canvas: payload.canvas,
+        meta,
+        filesBase: payload.filesBase ?? defaultFilesBase(this.projectId),
+        error: null,
+      })
     } catch (err) {
       if (this.stopped) return
       const apiErr = err instanceof ApiError ? err : new ApiError(0, 'unknown', (err as Error).message)
@@ -133,8 +143,14 @@ export class ProjectStore {
 }
 
 /** canvas.json + mtime → 画板视图 */
-export function boardsToViews(projectId: string, canvas: CanvasDoc | null, meta: Record<string, BoardMeta>): BoardView[] {
+export function boardsToViews(
+  projectId: string,
+  canvas: CanvasDoc | null,
+  meta: Record<string, BoardMeta>,
+  filesBase = '',
+): BoardView[] {
   if (!canvas) return []
+  const base = filesBase || defaultFilesBase(projectId)
   return [...canvas.boards]
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     .map((board) => ({
@@ -144,7 +160,7 @@ export function boardsToViews(projectId: string, canvas: CanvasDoc | null, meta:
       y: board.y,
       width: board.width,
       height: board.height,
-      src: boardSrc(projectId, board.file, meta[board.id]?.mtime ?? 0),
+      src: boardSrc(board.file, meta[board.id]?.mtime ?? 0, base),
       missing: meta[board.id]?.exists === false,
     }))
 }

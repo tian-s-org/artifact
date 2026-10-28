@@ -5,3 +5,8 @@ dist-server/
 .DS_Store
 .tmp/
 tests/.tmp/
+
+# 云端
+apps/cloud/web/
+apps/cloud/.wrangler/
+apps/cloud/.dev.vars

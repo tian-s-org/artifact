@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "artifact",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-05-11",
+  "workers_dev": true,
+  // 前端就是本地版那份 SPA（apps/cloud/package.json 的 build:web 构建到这里）
+  "assets": {
+    "directory": "./web",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // /api 与 /f 必须先进 Worker；其余静态文件由 assets 直接发
+    "run_worker_first": true
+  },
+  "r2_buckets": [
+    {
+      "binding": "FILES",
+      "bucket_name": "artifact"
+    }
+  ],
+  // 应用与画板文件分两个源：画板那个源上没有 cookie、没有 API，只发白名单文件
+  "routes": [
+    { "pattern": "artifact.tianyw0.xyz", "custom_domain": true },
+    { "pattern": "artifact-files.tianyw0.xyz", "custom_domain": true }
+  ],
+  "vars": {
+    "APP_HOST": "artifact.tianyw0.xyz",
+    "FILES_HOST": "artifact-files.tianyw0.xyz"
+  }
+}

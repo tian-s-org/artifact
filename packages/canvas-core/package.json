@@ -1,0 +1,17 @@
+{
+  "name": "@artifact/canvas-core",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "无限画布引擎：平移、缩放、点阵网格、取景。不依赖 React，本地版与云端版共用，原型技能也引用它。",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "~5.6.3"
+  }
+}

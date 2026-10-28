@@ -17,12 +17,22 @@ description: 需要在无限画布上做/看设计时使用——品牌、界面
 
 项目根默认是 artifact 仓库的 `projects/`；用 `artifact canvas --projects <目录>` 或环境变量 `ARTIFACT_PROJECTS` 指到别处。
 
+## 本地还是云端
+
+- **本地**：项目就是目录，直接改文件（下面各节都是这套）。
+- **云端**：项目在 `https://artifact.tianyw0.xyz` 上，文件用 HTTP 接口改，没有本地目录。
+  在 artifact 仓库里整包推：`pnpm cloud:push <项目…>`；只改一块画板就走接口（见文末「云端接口」）。
+
+云端画板同样是 `sandbox=""` + 独立文件源，规则和本地一样：无脚本、不引用外网、资源用相对路径。
+
 ## 起画布
 
 ```bash
-npx @artifact/cli canvas                 # 在 artifact 仓库里直接起
-npx @artifact/cli canvas --projects ~/designs --port 4330
+npx <artifact 仓库>/packages/cli canvas                 # 在 artifact 仓库里直接起
+npx <artifact 仓库>/packages/cli canvas --projects ~/designs --port 4330
 ```
+
+（还没发到 npm，所以是带路径的 npx；发版后就是 `npx @artifact/cli canvas`。）
 
 打开 `http://127.0.0.1:4330`：`/` 是项目列表，`/p/<项目 id>` 进画布，`?focus=<画板 id>&scale=<0.2–4>` 直接定位到某块画板。
 
@@ -74,5 +84,25 @@ pnpm versions restore <项目> <版本 id> [--board board-001]
 - 不给画布加编辑能力（绘图、图层、属性面板、画板内编辑）——这是产品边界。
 - 不手改 `versions/`（blob 是内容寻址的，改了就对不上）。
 - 不把 `canvas.json`、`context.md`、`versions/` 当画板资源引用——`/files` 对它们返回 403。
+
+## 云端接口
+
+密钥用 `Authorization: Bearer <SITE_KEY>`（问用户要，别写进仓库）：
+
+```bash
+BASE=https://artifact.tianyw0.xyz/api/projects/<项目>
+H="authorization: Bearer $ARTIFACT_KEY"
+
+curl -s "$BASE/tree" -H "$H"                      # 看项目里有什么文件
+curl -s "$BASE/file?path=artboards/board-001/index.html" -H "$H"     # 读
+curl -s -X POST "$BASE/file" -H "$H" -H 'content-type: application/json' \
+  -d '{"path":"artboards/board-001/index.html","content":"<html>…</html>"}'   # 写
+```
+
+- **写操作一律 `POST`**（Cloudflare 挡 `PUT`/`PATCH`/`DELETE`）；删文件用 `POST "$BASE/file?path=…&op=delete"`。
+- 二进制（图片、字体）用 `{"content":"<base64>","encoding":"base64"}`。
+- 新建画板：先 `POST /api/projects/<pid>/boards`，再写它的 `index.html`。
+- 写 `canvas.json` 时它的 `id` 必须等于项目 id，否则 400。
+- 云端靠轮询（约 2.5 秒）刷新，写完稍等一下再看画布。
 
 协议细节见 `references/protocol.md`。

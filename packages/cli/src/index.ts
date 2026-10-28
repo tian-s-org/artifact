@@ -21,9 +21,11 @@ const USAGE = `artifact —— Agent 原生设计画布
       起本地画布（默认在仓库的 projects/ 下找项目）
 
 示例：
-  npx @artifact/cli skill install
-  npx @artifact/cli skill install --target all --force
-  npx @artifact/cli canvas --projects ~/designs --port 4330`
+  npx <artifact 仓库>/packages/cli skill install
+  npx <artifact 仓库>/packages/cli skill install --target all --force
+  npx <artifact 仓库>/packages/cli canvas --projects ~/designs --port 4330
+
+（还没发到 npm；发版后把路径换成 @artifact/cli 即可）`
 
 interface Parsed {
   command: string[]

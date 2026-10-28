@@ -7,8 +7,9 @@
 Agent 原生的无限设计画布。**画布是只读的**：没有编辑按钮、没有属性面板，改设计只能改文件。
 你写 `projects/<项目>/artboards/<画板>/index.html`，用户开着的画布会自己换那一块。
 
-`apps/local` 是本地画布（已完成）；`packages/canvas-core` 是画布引擎（本地版与将来的云端版共用，
-原型技能也会引用它）。
+`apps/local` 是本地画布；`apps/cloud` 是云端画布（Cloudflare Worker + R2，线上 `artifact.tianyw0.xyz`，
+跑的是同一份前端）；`packages/canvas-core` 是画布引擎（两版共用，原型技能也会引用它）。
+`packages/cli` 负责把技能装进本地 Agent 技能库。
 
 ## 动手前先读
 
@@ -28,6 +29,12 @@ pnpm versions save brand "配色定稿"        # 存一版
 pnpm versions list brand
 pnpm versions restore brand <版本 id> [--board board-001]
 pnpm typecheck && pnpm test && pnpm test:e2e
+
+# 云端
+pnpm --filter @artifact/cloud test       # worker 直测（内存版 R2）
+pnpm cloud:push brand architecture       # 把本地 projects/ 推到线上
+pnpm cloud:deploy                        # 重新打包 SPA 并部署 Worker
+pnpm --filter @artifact/cloud smoke      # 真浏览器冒烟线上画布
 ```
 
 `pnpm new-board` 与 `pnpm versions` 直接读写项目目录，不需要服务在跑；服务开着时改完自动刷新。
@@ -71,6 +78,16 @@ pnpm typecheck && pnpm test && pnpm test:e2e
 - 不把 `canvas.json`、`context.md`、`versions/` 放到 `/files` 能取到的地方。
 - 不往项目里放大体积位图或构建产物；画板是手写 HTML。
 - 没有用户明确要求，不 commit、不 push、不加 CI。
+
+## 改云端
+
+- 两版共用一份前端（`apps/local/src` 打包进 `apps/cloud/web`）。前端调一个新接口，`apps/cloud/src/api.ts`
+  里就得有对应实现，否则云端 404。
+- **写操作一律 `POST`**：Cloudflare 在边缘就把 `PUT`/`PATCH`/`DELETE` 挡成 403（到不了 Worker）；
+  删文件用 `POST …/file?op=delete`。接口路径里别出现 `config`（WAF 会拦），所以那条叫 `/api/meta`。
+- 画板永远从文件源 `artifact-files.tianyw0.xyz/f/<pid>/<令牌>/…` 加载，iframe 的 `sandbox=""` 不加 `allow-same-origin`；
+  文件源除了 `/f/` 什么都不发。这两条是云端的安全本质，别为了方便放宽。
+- 密钥只放 `apps/cloud/.dev.vars`（已 gitignore）或 `wrangler secret`；`SITE_KEY`、`FILES_SECRET` 不进代码、不进文档、不进提交。
 
 ## 验证改动
 

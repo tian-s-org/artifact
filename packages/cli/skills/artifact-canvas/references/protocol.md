@@ -61,3 +61,15 @@ versions/blobs/<sha256 前 16> 文件原始字节，同内容只存一份
 `index.json` 每项：`{ id, at, note, auto?, canvas: {hash,file}, boards: { <画板 id>: {hash,file} } }`。
 版本 id 形如 `v20261029-073000`（UTC），同一秒内重复时加 `-2`、`-3`。
 恢复前自动存一份 `auto: true` 的「恢复前自动备份」；恢复时内容已一致的文件不重写。
+
+## 云端
+
+云端项目与本地目录同构，只是存储换成 R2：键是 `<项目 id>/<相对路径>`，比如 `brand/artboards/board-001/index.html`。
+
+- 画板不从应用源取，而是从独立的文件源 `https://artifact-files.tianyw0.xyz/f/<项目 id>/<令牌>/<相对路径>` 取；
+  令牌由服务端按项目算（HMAC），前端每次取项目详情都重新拿。相对资源自动带上同一个路径前缀，无需改动画板 HTML。
+- 画板文档回 `sandbox` CSP、`script-src 'none'`、`connect-src 'none'`，只有 `img/font/style/media` 允许本项目资源与 `data:`。
+- 写文件一律 `POST`：`POST /api/projects/<pid>/file`（body `{ path, content, encoding? }`）；
+  删用 `?op=delete`；整包导入 `POST /api/projects/<pid>/files`（`{ files[], createProject, name }`）。
+- 云端没有 `versions/` 目录可写，版本走 `/api/projects/<pid>/versions`。
+- 变更通知是轮询（约 2.5 秒），不是推送。

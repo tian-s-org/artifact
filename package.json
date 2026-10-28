@@ -1,0 +1,21 @@
+{
+  "name": "artifact",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "pnpm@10.27.0",
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  },
+  "scripts": {
+    "dev": "pnpm --filter @artifact/local dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "start": "pnpm --filter @artifact/local start",
+    "test": "pnpm --filter @artifact/local test",
+    "test:e2e": "pnpm --filter @artifact/local test:e2e",
+    "new-board": "pnpm --filter @artifact/local new-board",
+    "versions": "pnpm --filter @artifact/local versions",
+    "probe:zoom": "pnpm --filter @artifact/local probe:zoom"
+  }
+}

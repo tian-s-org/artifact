@@ -6,8 +6,8 @@ Agent（Claude Code）在项目目录里直接写设计文件，画布只负责�
 没有画图工具、没有图层面板、没有属性面板——想改，就改文件。
 
 ```
-projects/<项目>/artboards/<画板>/index.html   ← Agent 写这里
-projects/<项目>/canvas.json                   ← 画板摆在哪、叫什么、多大
+<你的项目>/.artifact/artboards/<画板>/index.html   ← Agent 写这里
+<你的项目>/.artifact/canvas.json                   ← 画板摆在哪、叫什么、多大
 ```
 
 改完存盘，正在开着的画布自己换那一块，不刷新整页、不打断缩放。
@@ -57,7 +57,7 @@ npx @tian-s-org/artifact-cli canvas --projects ./designs              # 在任�
 云端：
 
 ```bash
-pnpm cloud:push brand architecture web-ui        # 把 projects/ 推到云端画布
+pnpm cloud:push <项目 id…>                       # 把 ARTIFACT_PROJECTS 下的项目推到云端画布
 pnpm cloud:deploy                                # 重新部署 Worker（含重新打包 SPA）
 ```
 
@@ -80,9 +80,11 @@ artifact/
 │   └── tests/                  worker 直测（内存版 R2）
 ├── packages/canvas-core/src/   viewport / gestures / geometry，无 React 依赖
 ├── packages/schema/src/        canvas-schema.ts（协议与校验）、templates.ts（新建骨架，三边共用）
-├── packages/cli/               @tian-s-org/artifact-cli：装技能、起本地画布
-└── projects/                   示例项目：brand、architecture、web-ui（也就是协议样例）
+└── packages/cli/               @tian-s-org/artifact-cli：装技能、起本地画布
 ```
+
+仓库里不带示例项目：画布读的是你项目下的 `.artifact/`（或用 `--projects` 指定的根）。
+完整的协议与最小画板示例见技能 `packages/cli/skills/artifact-canvas/SKILL.md`。
 
 ## 文件协议
 
@@ -108,13 +110,13 @@ artifact/
 }
 ```
 
-- `id`、画板 `id`：小写字母、数字、连字符，同时是目录名。
+- `id`、画板 `id`：小写字母、数字、连字符。项目 id 就是 URL 里的 `/p/<id>`；画板 id 同时是 `artboards/` 下的目录名。
 - `file` 必须是 `artboards/<画板 id>/index.html`；不能穿出项目目录。
 - 未知字段原样保留，协议往后加东西不会打坏旧客户端；解析失败时画布停在上一份好数据并给出提示。
 - 画板内容是纯 HTML/CSS/SVG，不依赖画布实现；画布只负责把文件放进 iframe。
 
 ```
-projects/<项目>/
+<项目>/.artifact/
 ├── canvas.json
 ├── context.md                  项目背景，给 Agent 看的
 ├── design-system/              tokens.json、guidelines.md（可选，CSS 可以被画板引用）

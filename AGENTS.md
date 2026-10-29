@@ -1,11 +1,12 @@
-# CLAUDE.md
+# AGENTS.md
 
 给在这个仓库里工作的 Agent（Claude Code 等）的说明。用户看的是 `README.md`。
 
 ## 这个仓库是什么
 
 Agent 原生的无限设计画布。**画布是只读的**：没有编辑按钮、没有属性面板，改设计只能改文件。
-你写 `projects/<项目>/artboards/<画板>/index.html`，用户开着的画布会自己换那一块。
+你写 `<项目>/.artifact/artboards/<画板>/index.html`，用户开着的画布会自己换那一块。
+仓库本身不带示例项目：项目的根由画布启动时的 `--projects`（默认当前目录的 `.artifact/`）决定。
 
 - `apps/local` 是**底座**（包名 `@tian-s-org/canvas`）：无限画布 SPA + 本地服务。它可发布，装进任意项目就能起画布。
 - `apps/cloud` 是云端画布（Cloudflare Worker + R2，线上 `artifact.tianyw0.xyz`），跑的是同一份前端。
@@ -17,8 +18,8 @@ Agent 原生的无限设计画布。**画布是只读的**：没有编辑按钮�
 
 ## 动手前先读
 
-1. `projects/<项目>/context.md`——项目背景、目标用户、约束。
-2. `projects/<项目>/design-system/`——颜色、字号、间距的令牌与规则；画板要按它来。
+1. `<项目>/.artifact/context.md`——项目背景、目标用户、约束。
+2. `<项目>/.artifact/design-system/`——颜色、字号、间距的令牌与规则；画板要按它来。
 3. 已有的画板：照着现有风格、尺寸和排版节奏做，别另起一套。
 
 ## 常用命令

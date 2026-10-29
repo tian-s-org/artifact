@@ -8,11 +8,11 @@ Agent 原生的无限设计画布。**画布是只读的**：没有编辑按钮�
 你写 `<项目>/.artifact/artboards/<画板>/index.html`，用户开着的画布会自己换那一块。
 仓库本身不带示例项目：项目的根由画布启动时的 `--projects`（默认当前目录的 `.artifact/`）决定。
 
-- `apps/local` 是**底座**（包名 `@tian-s-org/canvas`）：无限画布 SPA + 本地服务。它可发布，装进任意项目就能起画布。
+- `packages/canvas` 是**底座**（`@tian-s-org/canvas`）：无限画布 SPA + 本地服务。它可发布，装进任意项目就能起画布。
 - `apps/cloud` 是云端画布（Cloudflare Worker + R2，线上 `artifact.tianyw0.xyz`），跑的是同一份前端。
 - `packages/canvas-core` 是画布引擎（`@tian-s-org/canvas-core`，无 React，两版共用）。
 - `packages/schema` 是画布协议（`@tian-s-org/schema`：`canvas.json` 解析校验 + 新建骨架），本地、云端、前端共用。
-- `packages/cli`（`@tian-s-org/artifact-cli`）负责装技能与起画布；它依赖底座，`npx @tian-s-org/artifact-cli canvas` 不需要仓库在场。
+- `packages/artifact-cli`（`@tian-s-org/artifact-cli`）负责装技能与起画布；它依赖底座，`npx @tian-s-org/artifact-cli canvas` 不需要仓库在场。
 
 四个 `@tian-s-org/*` 包发布到 GitHub Packages（私有），发布步骤见文末「发布」。
 
@@ -29,15 +29,15 @@ Agent 原生的无限设计画布。**画布是只读的**：没有编辑按钮�
 ```bash
 pnpm dev                                  # 开发：http://127.0.0.1:4330
 pnpm build && pnpm start                  # 生产：单进程
-pnpm new-board brand "包装刀版线"          # 新建画板骨架（可 --id board-004 --size 1440x900）
-pnpm versions save brand "配色定稿"        # 存一版
-pnpm versions list brand
-pnpm versions restore brand <版本 id> [--board board-001]
+pnpm new-board <项目> "包装刀版线"         # 新建画板骨架（可 --id board-004 --size 1440x900）
+pnpm versions save <项目> "配色定稿"       # 存一版
+pnpm versions list <项目>
+pnpm versions restore <项目> <版本 id> [--board board-001]
 pnpm typecheck && pnpm test && pnpm test:e2e
 
 # 云端
 pnpm --filter @tian-s-org/cloud test     # worker 直测（内存版 R2）
-pnpm cloud:push brand architecture       # 把本地 projects/ 推到线上
+pnpm cloud:push <项目 id…>               # 把本地项目推到线上
 pnpm cloud:deploy                        # 重新打包 SPA 并部署 Worker
 pnpm --filter @tian-s-org/cloud smoke    # 真浏览器冒烟线上画布
 ```
@@ -86,7 +86,7 @@ pnpm --filter @tian-s-org/cloud smoke    # 真浏览器冒烟线上画布
 
 ## 改云端
 
-- 两版共用一份前端（`apps/local/src` 打包进 `apps/cloud/web`）。前端调一个新接口，`apps/cloud/src/api.ts`
+- 两版共用一份前端（`packages/canvas/src` 打包进 `apps/cloud/web`）。前端调一个新接口，`apps/cloud/src/api.ts`
   里就得有对应实现，否则云端 404。
 - **写操作一律 `POST`**：Cloudflare 在边缘就把 `PUT`/`PATCH`/`DELETE` 挡成 403（到不了 Worker）；
   删文件用 `POST …/file?op=delete`。接口路径里别出现 `config`（WAF 会拦），所以那条叫 `/api/meta`。
@@ -96,7 +96,7 @@ pnpm --filter @tian-s-org/cloud smoke    # 真浏览器冒烟线上画布
 
 ## 改应用壳
 
-应用壳（`apps/local/src`，云端共用）的样式一律写成 Tailwind v4 工具类；`app.css` 里只留 `@theme` 令牌和
+应用壳（`packages/canvas/src`，云端共用）的样式一律写成 Tailwind v4 工具类；`app.css` 里只留 `@theme` 令牌和
 `html/body` 的底，不再添组件规则。
 
 - `--spacing: 1px`：间距、尺寸按像素写，`p-8` 就是 8px，`h-45` 就是 45px，量多少写多少。
@@ -129,5 +129,5 @@ pnpm --filter @tian-s-org/artifact-cli publish
 pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build
 ```
 
-E2E 会在临时目录里起真实服务与浏览器，不会碰 `projects/`。
+E2E 会在临时目录里起真实服务与浏览器，不会碰本地项目目录。
 改前端时用 `pnpm dev` 自己看一眼，别只看测试绿。

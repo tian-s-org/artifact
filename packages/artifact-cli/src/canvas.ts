@@ -12,7 +12,7 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 
 /** 仓库里底座所在目录（--repo 回退用） */
-const REPO_APP = path.join('apps', 'local')
+const REPO_APP = path.join('packages', 'canvas')
 const REPO_BIN = path.join(REPO_APP, 'bin', 'artifact-canvas.mjs')
 
 export interface CanvasOptions {
@@ -30,7 +30,7 @@ export interface ResolvedCanvas {
   label: string
 }
 
-/** 从 start 往上找带 apps/local/bin/artifact-canvas.mjs 的目录 */
+/** 从 start 往上找带 packages/canvas/bin/artifact-canvas.mjs 的目录 */
 export function findRepoRoot(start: string = process.cwd()): string | null {
   let dir = path.resolve(start)
   for (;;) {

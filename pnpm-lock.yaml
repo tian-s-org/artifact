@@ -30,14 +30,30 @@ importers:
         specifier: ^4.0.0
         version: 4.154.0(@types/node@22.20.5)
 
-  apps/local:
+  packages/artifact-cli:
+    dependencies:
+      '@tian-s-org/canvas':
+        specifier: workspace:*
+        version: link:../canvas
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.15
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.5
+      typescript:
+        specifier: ~5.6.3
+        version: 5.6.3
+
+  packages/canvas:
     dependencies:
       '@tian-s-org/canvas-core':
         specifier: workspace:*
-        version: link:../../packages/canvas-core
+        version: link:../canvas-core
       '@tian-s-org/schema':
         specifier: workspace:*
-        version: link:../../packages/schema
+        version: link:../schema
       tsx:
         specifier: ^4.19.2
         version: 4.23.15
@@ -78,22 +94,6 @@ importers:
 
   packages/canvas-core:
     devDependencies:
-      typescript:
-        specifier: ~5.6.3
-        version: 5.6.3
-
-  packages/cli:
-    dependencies:
-      '@tian-s-org/canvas':
-        specifier: workspace:*
-        version: link:../../apps/local
-      tsx:
-        specifier: ^4.19.2
-        version: 4.23.15
-    devDependencies:
-      '@types/node':
-        specifier: ^22.10.2
-        version: 22.20.5
       typescript:
         specifier: ~5.6.3
         version: 5.6.3

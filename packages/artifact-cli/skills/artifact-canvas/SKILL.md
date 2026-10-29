@@ -47,7 +47,7 @@ npm i -D @tian-s-org/artifact-cli
 ```
 
 没权限连私有源、或在 artifact 仓库里调试时跳过安装，用仓库里的 CLI：
-`npx <artifact 仓库>/packages/cli canvas --repo <artifact 仓库> --projects <目录>`。
+`npx <artifact 仓库>/packages/artifact-cli canvas --repo <artifact 仓库> --projects <目录>`。
 
 ## 起画布（后台起，别卡住自己）
 

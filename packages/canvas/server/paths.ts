@@ -16,14 +16,14 @@ export const REPO_ROOT = path.resolve(PKG_ROOT, '../..')
 /**
  * 默认项目目录：
  * 1) 环境变量优先——`artifact-cli canvas --projects`、`ARTIFACT_PROJECTS` 都靠它指路；
- * 2) 当前目录在 artifact 仓库里时（且有 projects/），用仓库根的 projects/（示例项目）；
+ * 2) 当前目录在 artifact 仓库里时，用仓库根的 projects/（本地开发数据，已 gitignore）；
  * 3) 装进别的项目、由使用者起画布时，用当前目录下的 .artifact/（隐藏目录，不跟项目自己的文件混）。
  */
 export function projectsRoot(env: NodeJS.ProcessEnv = process.env): string {
   if (env.ARTIFACT_PROJECTS) return path.resolve(env.ARTIFACT_PROJECTS)
   const repoProjects = path.join(REPO_ROOT, 'projects')
   // 只有「当前就在仓库里」才算仓库内开发；从别的项目调用仓库里的 CLI 时，目录是别人的
-  if (isInside(REPO_ROOT, process.cwd()) && fs.existsSync(repoProjects)) return repoProjects
+  if (isInside(REPO_ROOT, process.cwd())) return repoProjects
   return path.resolve(process.cwd(), '.artifact')
 }
 

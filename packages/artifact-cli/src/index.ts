@@ -25,7 +25,7 @@ const USAGE = `artifact-cli —— Agent 原生设计画布的命令行
   npx @tian-s-org/artifact-cli skill install --target all --force
   npx @tian-s-org/artifact-cli canvas            # 默认读 ./.artifact
 
-（发布在 GitHub Packages：@tian-s-org/artifact-cli。没配 registry 时用仓库里的 packages/cli。）`
+（发布在 GitHub Packages：@tian-s-org/artifact-cli。没配 registry 时用仓库里的 packages/artifact-cli。）`
 
 interface Parsed {
   command: string[]

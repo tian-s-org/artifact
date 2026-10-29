@@ -5,7 +5,7 @@
   "type": "module",
   "description": "云端版：Cloudflare Worker + R2 + 独立沙箱源，画布与本地版共用同一份前端",
   "scripts": {
-    "build:web": "pnpm --filter @tian-s-org/canvas exec vite build --outDir ../cloud/web --emptyOutDir",
+    "build:web": "pnpm --filter @tian-s-org/canvas exec vite build --outDir ../../apps/cloud/web --emptyOutDir",
     "build": "pnpm typecheck && pnpm build:web",
     "dev": "wrangler dev",
     "deploy": "pnpm build && wrangler deploy",

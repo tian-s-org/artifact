@@ -16,9 +16,9 @@ Agent（Claude Code）在项目目录里直接写设计文件，画布只负责�
 
 | 形态 | 位置 | 状态 |
 | --- | --- | --- |
-| 底座（本地画布） | `apps/local`，包名 `@tian-s-org/canvas` | 已完成；可作为包装进任意项目，`npx @tian-s-org/artifact-cli canvas --projects <目录>` |
+| 底座（本地画布） | `packages/canvas`，包名 `@tian-s-org/canvas` | 已完成；可作为包装进任意项目，`npx @tian-s-org/artifact-cli canvas --projects <目录>` |
 | 云端画布 | `apps/cloud` | 已完成：Worker + R2，`https://artifact.tianyw0.xyz`（见 `apps/cloud/README.md`） |
-| 技能安装 | `packages/cli`，包名 `@tian-s-org/artifact-cli` | 已完成：`npx @tian-s-org/artifact-cli skill install`（GitHub Packages，私有） |
+| 技能安装 | `packages/artifact-cli`，包名 `@tian-s-org/artifact-cli` | 已完成：`npx @tian-s-org/artifact-cli skill install`（GitHub Packages，私有） |
 
 `packages/canvas-core` 是前后端无关的画布引擎（视口数学、手势判定、点阵网格、取景），本地版与云端版共用；
 `packages/schema` 是画布协议（`canvas.json` 解析校验 + 新建骨架模板），本地服务端、云端 Worker、前端共用一份。
@@ -53,7 +53,7 @@ npx @tian-s-org/artifact-cli skill install --target all --force       # 同时�
 npx @tian-s-org/artifact-cli canvas --projects ./designs              # 在任意项目里起画布
 ```
 
-仓库里调试时仍可直接用路径（不需要发布）：`npx ./packages/cli canvas --repo . --projects ./designs`。
+仓库里调试时仍可直接用路径（不需要发布）：`npx ./packages/artifact-cli canvas --repo . --projects ./designs`。
 云端：
 
 ```bash
@@ -68,23 +68,26 @@ Agent 与脚本走 `Authorization: Bearer <SITE_KEY>`，不需要 Cookie。
 
 ```
 artifact/
-├── apps/local/                 底座（包名 @tian-s-org/canvas）
-│   ├── src/                    画布、聚焦层、项目状态、版本面板
-│   ├── server/                 node:http：SPA + /api + /events + /files，文件监听
-│   ├── bin/                    artifact-canvas：装成包后的启动入口
-│   ├── scripts/                dev、new-board、version、zoom-probe
-│   └── tests/{unit,e2e}        node --test；E2E 用 playwright 驱动 Chromium + WebKit
-├── apps/cloud/                 云端画布：Cloudflare Worker + R2 + 独立沙箱文件源
-│   ├── src/                    worker / api / files / repo / versions / storage / auth
-│   ├── scripts/                push（推项目）、smoke（真浏览器冒烟）
-│   └── tests/                  worker 直测（内存版 R2）
-├── packages/canvas-core/src/   viewport / gestures / geometry，无 React 依赖
-├── packages/schema/src/        canvas-schema.ts（协议与校验）、templates.ts（新建骨架，三边共用）
-└── packages/cli/               @tian-s-org/artifact-cli：装技能、起本地画布
+├── apps/
+│   └── cloud/                  云端画布：Cloudflare Worker + R2 + 独立沙箱文件源（部署单元）
+│       ├── src/                worker / api / files / repo / versions / storage / auth
+│       ├── scripts/            push（推项目）、smoke（真浏览器冒烟）
+│       └── tests/              worker 直测（内存版 R2）
+└── packages/
+    ├── canvas/                 底座（@tian-s-org/canvas）：SPA + 本地服务
+    │   ├── src/                画布、聚焦层、项目状态、版本面板
+    │   ├── server/             node:http：SPA + /api + /events + /files，文件监听
+    │   ├── bin/                artifact-canvas：装成包后的启动入口
+    │   ├── scripts/            dev、new-board、version、zoom-probe
+    │   └── tests/{unit,e2e}    node --test；E2E 用 playwright 驱动 Chromium + WebKit
+    ├── canvas-core/src/        viewport / gestures / geometry，无 React 依赖
+    ├── schema/src/             canvas-schema.ts（协议与校验）、templates.ts（新建骨架，三边共用）
+    └── artifact-cli/           @tian-s-org/artifact-cli：装技能、起本地画布
+        └── skills/artifact-canvas/   SKILL.md + references/ + assets/ + scripts/
 ```
 
 仓库里不带示例项目：画布读的是你项目下的 `.artifact/`（或用 `--projects` 指定的根）。
-完整的协议与最小画板示例见技能 `packages/cli/skills/artifact-canvas/SKILL.md`。
+完整的协议与最小画板模板见技能 `packages/artifact-cli/skills/artifact-canvas/`。
 
 ## 文件协议
 

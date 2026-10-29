@@ -80,8 +80,20 @@ export function resolveInside(root: string, rel: string): string {
   return abs
 }
 
+/** root 自己就是项目时（root/canvas.json 存在且 id 合法），返回它的 id；否则 null。 */
+export function singleProjectId(root: string): string | null {
+  try {
+    const raw = JSON.parse(fs.readFileSync(path.join(root, 'canvas.json'), 'utf8')) as { id?: unknown }
+    return isId(raw.id) ? raw.id : null
+  } catch {
+    return null
+  }
+}
+
+/** 项目目录：默认 <root>/<项目 id>；根目录自己就是项目时就是 root。 */
 export function projectDir(root: string, projectId: string): string {
   if (!isId(projectId)) throw new Error(`项目 id 不合法：${projectId}`)
+  if (singleProjectId(root) === projectId) return root
   return path.join(root, projectId)
 }
 

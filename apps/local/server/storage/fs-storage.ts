@@ -5,7 +5,8 @@
 import { createHash, randomBytes } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { resolveInside } from '../paths'
+import { isId } from '@tian-s-org/schema'
+import { projectDir, resolveInside } from '../paths'
 import type { FileEntry, StorageProvider } from './types'
 
 /** 临时写入的文件名前缀，监听端一律忽略 */
@@ -20,8 +21,12 @@ export class FsStorageProvider implements StorageProvider {
     this.root = root
   }
 
-  private abs(rel: string): string {
-    return resolveInside(this.root, rel)
+  /* 键是「<项目 id>/<相对路径>」；根目录自己就是项目时，项目目录就是根 */
+  private abs(key: string): string {
+    const slash = key.indexOf('/')
+    const head = slash === -1 ? key : key.slice(0, slash)
+    if (!isId(head)) return resolveInside(this.root, key)
+    return resolveInside(projectDir(this.root, head), slash === -1 ? '' : key.slice(slash + 1))
   }
 
   async readFile(rel: string): Promise<Uint8Array> {

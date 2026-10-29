@@ -18,7 +18,7 @@ import {
   type CanvasDoc,
 } from '@tian-s-org/schema'
 import { boardSkeleton, CONTEXT_TEMPLATE, GUIDELINES_TEMPLATE, TOKENS_TEMPLATE } from '@tian-s-org/schema'
-import { projectDir, resolveInside } from '../paths'
+import { projectDir, resolveInside, singleProjectId } from '../paths'
 import { withProjectLock } from './locks'
 import type { CreateProjectInput, ProjectRepository } from './types'
 
@@ -78,6 +78,18 @@ export class FsProjectRepository implements ProjectRepository {
   }
 
   async listProjects(): Promise<{ id: string; name: string; boardCount: number; mtime: number }[]> {
+    // 根目录自己就是项目（.artifact 直接放 canvas.json）：只有这一项
+    if (singleProjectId(this.root)) {
+      const file = path.join(this.root, CANVAS_FILE)
+      try {
+        const stat = await fs.stat(file)
+        const doc = parseCanvas(JSON.parse(await fs.readFile(file, 'utf8')))
+        return [{ id: doc.id, name: doc.name, boardCount: doc.boards.length, mtime: stat.mtimeMs }]
+      } catch {
+        return []
+      }
+    }
+
     let items
     try {
       items = await fs.readdir(this.root, { withFileTypes: true })

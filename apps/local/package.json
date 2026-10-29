@@ -1,6 +1,6 @@
 {
   "name": "@tian-s-org/canvas",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "private": false,
   "description": "画布底座：无限画布 SPA + 本地服务（文件协议、监听、版本、SSE），装进任意项目就能看画板",

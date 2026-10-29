@@ -10,19 +10,20 @@ description: 需要在无限画布上做/看设计时使用——品牌、界面
 ## 三个位置
 
 ```
-<项目根>/<项目>/canvas.json                画板摆在哪、叫什么、多大
-<项目根>/<项目>/artboards/<画板>/index.html  设计本体
-<项目根>/<项目>/versions/                   版本快照（内容寻址，别手改）
+<项目>/.artifact/canvas.json                 画板摆在哪、叫什么、多大
+<项目>/.artifact/artboards/<画板>/index.html  设计本体
+<项目>/.artifact/versions/                   版本快照（内容寻址，别手改）
 ```
 
-项目根默认是当前目录的 `.artifact/`（隐藏目录，不跟项目自己的文件混）；用 `artifact-cli canvas --projects <目录>` 或环境变量 `ARTIFACT_PROJECTS` 指到别处。
+`.artifact/` 自己就是项目，**不要再套一层项目名**。项目根默认是当前目录的 `.artifact/`；
+要管多个项目时用 `artifact-cli canvas --projects <目录>` 或 `ARTIFACT_PROJECTS` 指到别的根，那边按 `<根>/<项目 id>/` 组织。
 
 ## 建一个项目
 
 当前目录里没有 `.artifact/` 就是还没开始。在**被设计的那个项目**根下建：
 
 ```
-<项目>/.artifact/<项目 id>/
+<项目>/.artifact/
 ├── canvas.json
 ├── context.md
 ├── design-system/{tokens.json,guidelines.md}
@@ -35,7 +36,8 @@ description: 需要在无限画布上做/看设计时使用——品牌、界面
 { "protocol": 1, "id": "<项目 id>", "name": "<名字>", "boards": [] }
 ```
 
-`id` 必须等于目录名；画板只在 `boards` 里登记后才会出现在画布上。`context.md` 写项目背景，`design-system/` 写令牌与规则（没有就先摘现有原型的色板和字号）。
+`id` 只受小写字母/数字/连字符约束（它是 URL 里的 `/p/<id>`），不必等于目录名；画板只在 `boards` 里登记后才会出现在画布上。
+`context.md` 写项目背景，`design-system/` 写令牌与规则（没有就先摘现有原型的色板和字号）。
 
 ## 本地还是云端
 

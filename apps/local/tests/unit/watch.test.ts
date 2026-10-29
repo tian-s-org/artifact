@@ -126,3 +126,31 @@ test('刚写过的文件会再等一轮（稳定性双查），不会丢事件',
     await fs.rm(root, { recursive: true, force: true })
   }
 })
+
+test('根目录自己就是项目时，相对路径里没有项目 id 那一段', async () => {
+  const { root, events, watcher } = await setup()
+  try {
+    await fs.writeFile(
+      path.join(root, 'canvas.json'),
+      JSON.stringify({ protocol: 1, id: 'skillbor', name: 'skillbor', boards: [] }),
+    )
+    const board = path.join(root, 'artboards/board-001/index.html')
+    await fs.mkdir(path.dirname(board), { recursive: true })
+    await fs.writeFile(board, '<!doctype html><title>平铺</title>')
+    const stat = await fs.stat(board)
+    events.length = 0
+
+    await watcher.flushForTest(['artboards/board-001/index.html'])
+    assert.equal(events.length, 1)
+    const event = events[0]
+    assert.equal(event?.type, 'board:changed')
+    if (event?.type === 'board:changed') {
+      assert.equal(event.projectId, 'skillbor')
+      assert.equal(event.boardId, 'board-001')
+      assert.equal(event.mtime, stat.mtimeMs)
+    }
+  } finally {
+    watcher.close()
+    await fs.rm(root, { recursive: true, force: true })
+  }
+})

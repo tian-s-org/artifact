@@ -10,6 +10,7 @@ import { watch, type FSWatcher } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { CanvasError, isId, parseCanvas, type CanvasDoc } from '@tian-s-org/schema'
+import { projectDir, singleProjectId } from './paths'
 import type { EventProvider } from './storage/types'
 
 const IGNORED_SEGMENTS = new Set(['node_modules', '.git', 'dist', 'dist-server', '.tmp'])
@@ -92,7 +93,11 @@ export class ProjectWatcher {
 
     const touchedProjects = new Map<string, Set<string>>()
     for (const rel of relevant) {
-      const [projectId, rest] = splitProject(rel)
+      // 根目录自己就是项目时，相对路径里没有项目 id 那一段
+      const single = singleProjectId(this.root)
+      const [projectId, rest] = single
+        ? [single, rel.split(path.sep).join('/').split('/').filter(Boolean)]
+        : splitProject(rel)
       if (!projectId || rest.length === 0) continue
       const set = touchedProjects.get(projectId) ?? new Set<string>()
       set.add(rest.join('/'))
@@ -100,14 +105,15 @@ export class ProjectWatcher {
     }
 
     for (const [projectId, rels] of touchedProjects) {
+      const dir = projectDir(this.root, projectId)
       if (rels.has('canvas.json')) {
-        await this.handleCanvas(projectId, await this.mtimeOf(path.join(projectId, 'canvas.json')))
+        await this.handleCanvas(projectId)
         continue
       }
       for (const rel of rels) {
         const board = boardFromRel(rel)
         if (!board) continue
-        const mtime = await this.mtimeOf(path.join(projectId, 'artboards', board, 'index.html'))
+        const mtime = await this.mtimeOfAbs(path.join(dir, 'artboards', board, 'index.html'))
         if (mtime > 0) this.bus.publish({ type: 'board:changed', projectId, boardId: board, mtime })
       }
     }
@@ -117,6 +123,7 @@ export class ProjectWatcher {
     if (!rel || rel.includes('\0')) return false
     const segments = rel.split(path.sep).join('/').split('/')
     if (segments.some((s) => s === '' || s.startsWith('.') || IGNORED_SEGMENTS.has(s))) return false
+    if (singleProjectId(this.root)) return true
     const [projectId] = segments
     if (!projectId || !isId(projectId)) return false
     return true
@@ -136,19 +143,25 @@ export class ProjectWatcher {
   }
 
   private async mtimeOf(rel: string): Promise<number> {
+    return this.mtimeOfAbs(path.join(this.root, rel))
+  }
+
+  private async mtimeOfAbs(abs: string): Promise<number> {
     try {
-      const stat = await fs.stat(path.join(this.root, rel))
+      const stat = await fs.stat(abs)
       return stat.mtimeMs
     } catch {
       return 0
     }
   }
 
-  private async handleCanvas(projectId: string, mtime: number): Promise<void> {
+  private async handleCanvas(projectId: string): Promise<void> {
     const prev = this.snapshots.get(projectId)
+    const file = path.join(projectDir(this.root, projectId), 'canvas.json')
+    const mtime = await this.mtimeOfAbs(file)
     let doc: CanvasDoc
     try {
-      doc = parseCanvas(JSON.parse(await fs.readFile(path.join(this.root, projectId, 'canvas.json'), 'utf8')))
+      doc = parseCanvas(JSON.parse(await fs.readFile(file, 'utf8')))
     } catch (err) {
       const code = err instanceof CanvasError ? err.code : 'invalid-json'
       this.snapshots.set(projectId, { ids: new Set() })

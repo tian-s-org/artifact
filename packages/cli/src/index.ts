@@ -2,30 +2,30 @@
 /**
  * artifact CLI
  *
- *   artifact skill install [--target claude|omp|project|all] [--dir <技能库根>] [--force]
- *   artifact skill list
- *   artifact canvas [--projects <项目根>] [--port 4330] [--repo <artifact 仓库>]
+ *   artifact-cli skill install [--target claude|omp|project|all] [--dir <技能库根>] [--force]
+ *   artifact-cli skill list
+ *   artifact-cli canvas [--projects <项目根>] [--port 4330] [--repo <artifact 仓库>]
  */
 import { cliVersion, installSkill, installedInfo, SKILL_NAME } from './install'
 import { customTarget, resolveTargets, skillTargets } from './targets'
 import { resolveCanvas, runCanvas } from './canvas'
 
-const USAGE = `artifact —— Agent 原生设计画布
+const USAGE = `artifact-cli —— Agent 原生设计画布的命令行
 
 用法：
-  artifact skill install [--target claude|omp|project|all] [--dir <技能库根>] [--force]
+  artifact-cli skill install [--target claude|omp|project|all] [--dir <技能库根>] [--force]
       把「${SKILL_NAME}」技能装进本地 Agent 技能库（默认 claude，all = 所有用户级技能库）
-  artifact skill list
+  artifact-cli skill list
       看每个技能库装没装、装的是哪一版
-  artifact canvas [--projects <项目根>] [--port 4330] [--repo <artifact 仓库>]
+  artifact-cli canvas [--projects <项目根>] [--port 4330] [--repo <artifact 仓库>]
       起本地画布；项目根默认当前目录的 projects/，仓库里调试时用 --repo
 
 示例：
-  npx @tian-s-org/cli skill install
-  npx @tian-s-org/cli skill install --target all --force
-  npx @tian-s-org/cli canvas --projects ~/designs
+  npx @tian-s-org/artifact-cli skill install
+  npx @tian-s-org/artifact-cli skill install --target all --force
+  npx @tian-s-org/artifact-cli canvas --projects ~/designs
 
-（发布在 GitHub Packages：@tian-s-org/cli。没配 registry 时用仓库里的 packages/cli。）`
+（发布在 GitHub Packages：@tian-s-org/artifact-cli。没配 registry 时用仓库里的 packages/cli。）`
 
 interface Parsed {
   command: string[]
@@ -117,7 +117,7 @@ export async function main(argv: string[]): Promise<void> {
     if (group === 'skill' && action === 'install') process.exitCode = await skillInstall(parsed)
     else if (group === 'skill' && (action === 'list' || action === undefined)) process.exitCode = await skillList()
     else if (group === 'canvas') process.exitCode = await canvas(parsed)
-    else throw new Error(`未知命令：${parsed.command.join(' ')}（artifact --help 看用法）`)
+    else throw new Error(`未知命令：${parsed.command.join(' ')}（artifact-cli --help 看用法）`)
   } catch (err) {
     console.error(`错误：${(err as Error).message}`)
     process.exitCode = 1

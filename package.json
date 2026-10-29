@@ -17,7 +17,7 @@
     "cloud:dev": "pnpm --filter @tian-s-org/cloud dev",
     "cloud:deploy": "pnpm --filter @tian-s-org/cloud deploy",
     "cloud:push": "pnpm --filter @tian-s-org/cloud push --",
-    "artifact": "pnpm --filter @tian-s-org/cli dev --",
+    "artifact-cli": "pnpm --filter @tian-s-org/artifact-cli dev --",
     "new-board": "pnpm --filter @tian-s-org/canvas new-board",
     "versions": "pnpm --filter @tian-s-org/canvas versions",
     "probe:zoom": "pnpm --filter @tian-s-org/canvas probe:zoom"

@@ -15,7 +15,7 @@ export const REPO_ROOT = path.resolve(PKG_ROOT, '../..')
 
 /**
  * 默认项目目录：
- * 1) 环境变量优先——`artifact canvas --projects`、`ARTIFACT_PROJECTS` 都靠它指路；
+ * 1) 环境变量优先——`artifact-cli canvas --projects`、`ARTIFACT_PROJECTS` 都靠它指路；
  * 2) 在 artifact 仓库里直接跑时（包旁边既有 pnpm-workspace.yaml 又有 projects/），用仓库根的 projects/；
  * 3) 装进别的项目、由使用者起画布时，用当前目录下的 projects/。
  */

@@ -11,7 +11,7 @@ Agent 原生的无限设计画布。**画布是只读的**：没有编辑按钮�
 - `apps/cloud` 是云端画布（Cloudflare Worker + R2，线上 `artifact.tianyw0.xyz`），跑的是同一份前端。
 - `packages/canvas-core` 是画布引擎（`@tian-s-org/canvas-core`，无 React，两版共用）。
 - `packages/schema` 是画布协议（`@tian-s-org/schema`：`canvas.json` 解析校验 + 新建骨架），本地、云端、前端共用。
-- `packages/cli`（`@tian-s-org/cli`）负责装技能与起画布；它依赖底座，`npx @tian-s-org/cli canvas` 不需要仓库在场。
+- `packages/cli`（`@tian-s-org/artifact-cli`）负责装技能与起画布；它依赖底座，`npx @tian-s-org/artifact-cli canvas` 不需要仓库在场。
 
 四个 `@tian-s-org/*` 包发布到 GitHub Packages（私有），发布步骤见文末「发布」。
 
@@ -114,13 +114,13 @@ pnpm --filter @tian-s-org/cloud smoke    # 真浏览器冒烟线上画布
 pnpm --filter @tian-s-org/schema publish
 pnpm --filter @tian-s-org/canvas-core publish
 pnpm --filter @tian-s-org/canvas publish       # prepack 会先 vite build，dist 打进 tarball
-pnpm --filter @tian-s-org/cli publish
+pnpm --filter @tian-s-org/artifact-cli publish
 ```
 
 - 发布前提：GitHub 上有 `tian-s-org/artifact` 仓库；token 需要 `write:packages`。
 - `workspace:*` 由 pnpm 在打包时换成真实版本号；包之间升级版本要一起发。
 - token 只落本地 `.npmrc` 或发布时的环境，**不进仓库、不进文档**。
-- 发完在一个干净目录 `npm i @tian-s-org/cli && npx @tian-s-org/cli canvas --projects <dir>` 冒烟。
+- 发完在一个干净目录 `npm i @tian-s-org/artifact-cli && npx @tian-s-org/artifact-cli canvas --projects <dir>` 冒烟。
 
 ## 验证改动
 

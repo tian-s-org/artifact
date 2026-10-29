@@ -16,9 +16,9 @@ projects/<项目>/canvas.json                   ← 画板摆在哪、叫什么�
 
 | 形态 | 位置 | 状态 |
 | --- | --- | --- |
-| 底座（本地画布） | `apps/local`，包名 `@tian-s-org/canvas` | 已完成；可作为包装进任意项目，`npx @tian-s-org/cli canvas --projects <目录>` |
+| 底座（本地画布） | `apps/local`，包名 `@tian-s-org/canvas` | 已完成；可作为包装进任意项目，`npx @tian-s-org/artifact-cli canvas --projects <目录>` |
 | 云端画布 | `apps/cloud` | 已完成：Worker + R2，`https://artifact.tianyw0.xyz`（见 `apps/cloud/README.md`） |
-| 技能安装 | `packages/cli`，包名 `@tian-s-org/cli` | 已完成：`npx @tian-s-org/cli skill install`（GitHub Packages，私有） |
+| 技能安装 | `packages/cli`，包名 `@tian-s-org/artifact-cli` | 已完成：`npx @tian-s-org/artifact-cli skill install`（GitHub Packages，私有） |
 
 `packages/canvas-core` 是前后端无关的画布引擎（视口数学、手势判定、点阵网格、取景），本地版与云端版共用；
 `packages/schema` 是画布协议（`canvas.json` 解析校验 + 新建骨架模板），本地服务端、云端 Worker、前端共用一份。
@@ -46,11 +46,11 @@ pnpm start        # 生产：单进程，http://127.0.0.1:4330
 ```bash
 npm config set @tian-s-org:registry https://npm.pkg.github.com/
 npm config set //npm.pkg.github.com/:_authToken "<你的 GitHub token>"
-npm i -D @tian-s-org/cli
+npm i -D @tian-s-org/artifact-cli
 
-npx @tian-s-org/cli skill install                            # 装进 ~/.claude/skills/artifact-canvas
-npx @tian-s-org/cli skill install --target all --force       # 同时装 Claude Code 与 omp
-npx @tian-s-org/cli canvas --projects ./designs              # 在任意项目里起画布
+npx @tian-s-org/artifact-cli skill install                            # 装进 ~/.claude/skills/artifact-canvas
+npx @tian-s-org/artifact-cli skill install --target all --force       # 同时装 Claude Code 与 omp
+npx @tian-s-org/artifact-cli canvas --projects ./designs              # 在任意项目里起画布
 ```
 
 仓库里调试时仍可直接用路径（不需要发布）：`npx ./packages/cli canvas --repo . --projects ./designs`。
@@ -80,7 +80,7 @@ artifact/
 │   └── tests/                  worker 直测（内存版 R2）
 ├── packages/canvas-core/src/   viewport / gestures / geometry，无 React 依赖
 ├── packages/schema/src/        canvas-schema.ts（协议与校验）、templates.ts（新建骨架，三边共用）
-├── packages/cli/               @tian-s-org/cli：装技能、起本地画布
+├── packages/cli/               @tian-s-org/artifact-cli：装技能、起本地画布
 └── projects/                   示例项目：brand、architecture、web-ui（也就是协议样例）
 ```
 

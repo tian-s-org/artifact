@@ -1,11 +1,11 @@
 {
-  "name": "@tian-s-org/cli",
-  "version": "0.1.1",
+  "name": "@tian-s-org/artifact-cli",
+  "version": "0.1.2",
   "type": "module",
   "private": false,
   "description": "把 artifact 画布技能装进本地 Agent 技能库，并一键起本地画布",
   "bin": {
-    "artifact": "./bin/artifact.mjs"
+    "artifact-cli": "./bin/artifact-cli.mjs"
   },
   "exports": {
     ".": "./src/index.ts"

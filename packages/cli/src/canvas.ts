@@ -1,5 +1,5 @@
 /**
- * artifact canvas：起本地画布。
+ * artifact-cli canvas：起本地画布。
  *
  * 默认启动装在本包依赖里的底座 `@tian-s-org/canvas`（跑它的 bin），
  * 所以只要装了 CLI，在任意项目里都能起画布，不需要 artifact 仓库在场。

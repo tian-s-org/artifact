@@ -136,6 +136,39 @@ test('画布 E2E', async (t) => {
       await page.close()
     })
 
+    await t.test('聚焦层进全屏：只剩查看器横栏，Esc 先退回聚焦层再关掉', async () => {
+      const page = await browser.newPage({ viewport: VIEW })
+      await page.goto(`${server.baseUrl}/p/e2e-canvas`)
+      await waitForBoards(page, 2)
+
+      const target = (await boardRects(page)).find((r) => r.id === 'board-002')
+      assert.ok(target, '找不到 board-002')
+      await page.mouse.dblclick(target.left + target.width / 2, target.top + target.height / 2)
+      await page.waitForSelector('.focus-head', { timeout: 5000 })
+
+      await page.click('.focus-expand')
+      await page.waitForSelector('.viewer-bar', { timeout: 5000 })
+
+      const bar = await page.textContent('.viewer-bar')
+      assert.ok(bar?.includes('board-002') && bar.includes('方案二'), `查看器横栏不对：${bar}`)
+      assert.equal(await page.locator('.focus-head').count(), 0, '全屏时不该还有聚焦层标题')
+
+      // 全屏盖住整个视口，底下的画布工具条和项目标记要藏起来
+      for (const sel of ['.canvas-tools', '.project-head']) {
+        const visible = await page.locator(sel).isVisible()
+        assert.equal(visible, false, `${sel} 在全屏下面不该露出来`)
+      }
+
+      await page.keyboard.press('Escape')
+      await page.waitForSelector('.viewer-bar', { state: 'detached', timeout: 5000 })
+      await page.waitForSelector('.focus-head', { timeout: 5000 })
+      assert.equal(await page.locator('.focus-layer').count(), 1, 'Esc 一次只退回聚焦层')
+
+      await page.keyboard.press('Escape')
+      await page.waitForSelector('.focus-layer', { state: 'detached', timeout: 5000 })
+      await page.close()
+    })
+
     await t.test('深链 ?focus=&scale= 直接落在某块画板上', async () => {
       const page = await browser.newPage({ viewport: VIEW })
       await page.goto(`${server.baseUrl}/p/e2e-canvas?focus=board-002&scale=0.5`)

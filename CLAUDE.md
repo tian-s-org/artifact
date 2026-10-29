@@ -89,6 +89,18 @@ pnpm --filter @artifact/cloud smoke      # 真浏览器冒烟线上画布
   文件源除了 `/f/` 什么都不发。这两条是云端的安全本质，别为了方便放宽。
 - 密钥只放 `apps/cloud/.dev.vars`（已 gitignore）或 `wrangler secret`；`SITE_KEY`、`FILES_SECRET` 不进代码、不进文档、不进提交。
 
+## 改应用壳
+
+应用壳（`apps/local/src`，云端共用）的样式一律写成 Tailwind v4 工具类；`app.css` 里只留 `@theme` 令牌和
+`html/body` 的底，不再添组件规则。
+
+- `--spacing: 1px`：间距、尺寸按像素写，`p-8` 就是 8px，`h-45` 就是 45px，量多少写多少。
+- 颜色只从令牌取（`text-ink-2`、`bg-surface`、`border-line`…）；`calc()` 里的空格写成 `_`，例如
+  `bottom-[calc(100%_+_6px)]`。
+- `.board`、`.board-frame`、`.focus-layer`、`.focus-head`、`.canvas-tools`、`.board-id`、`.vp-*`
+  这些类名是 E2E 与 `IframeCanvas` 的挂点，改样式时原样留着，别当死类名删掉。
+- 画布网格由 `packages/canvas-core` 直接写到 `background` 上，别在 CSS 里再画一层。
+
 ## 验证改动
 
 ```bash

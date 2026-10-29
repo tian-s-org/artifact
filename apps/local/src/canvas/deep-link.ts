@@ -4,8 +4,8 @@
  * 分享一个链接就能直接落在某块画板上；scale 不写就按这块画板取景，
  * 写了就按给定倍数居中。focus 指向不存在的画板时只当没写。
  */
-import type { Rect } from '@artifact/canvas-core'
-import { DEFAULT_MAX_SCALE, DEFAULT_MIN_SCALE } from '@artifact/canvas-core'
+import type { Rect } from '@tian-s-org/canvas-core'
+import { DEFAULT_MAX_SCALE, DEFAULT_MIN_SCALE } from '@tian-s-org/canvas-core'
 import type { BoardView } from './types'
 
 export interface DeepLink {

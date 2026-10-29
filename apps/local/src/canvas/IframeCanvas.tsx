@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { Viewport, type Rect } from '@artifact/canvas-core'
+import { Viewport, type Rect } from '@tian-s-org/canvas-core'
 import { BoardFrame } from './BoardFrame'
 import { readDeepLink } from './deep-link'
 import type { BoardView } from './types'

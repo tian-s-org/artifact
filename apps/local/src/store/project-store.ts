@@ -5,7 +5,7 @@
  * 高频的视口变化在 canvas-core 里直接写 DOM，不进 React。
  */
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
-import type { CanvasDoc } from '@shared/canvas-schema'
+import type { CanvasDoc } from '@tian-s-org/schema'
 import {
   ApiError,
   boardSrc,

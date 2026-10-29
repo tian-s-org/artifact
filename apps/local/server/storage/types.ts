@@ -2,7 +2,7 @@
  * 三个 Provider 接口（规格里的抽象要求）。本地用文件系统实现；
  * 将来接云端只要换实现，画布组件与 HTTP 层不用动。
  */
-import type { BoardSpec, CanvasDoc } from '../../shared/canvas-schema'
+import type { BoardSpec, CanvasDoc } from '@tian-s-org/schema'
 
 export interface FileEntry {
   /** 相对项目根目录的 POSIX 路径 */

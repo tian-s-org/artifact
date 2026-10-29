@@ -6,7 +6,7 @@
  *
  * 恢复前自动存一份 auto 备份；指定 boardId 时只写那一块画板。
  */
-import { CanvasError, isId, parseCanvas } from '../../local/shared/canvas-schema'
+import { CanvasError, isId, parseCanvas } from '@tian-s-org/schema'
 import { projectKey } from './paths'
 import { CANVAS_FILE } from './repo'
 import type { R2Storage } from './storage'

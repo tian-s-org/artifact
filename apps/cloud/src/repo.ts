@@ -15,8 +15,8 @@ import {
   parseCanvas,
   type BoardSpec,
   type CanvasDoc,
-} from '../../local/shared/canvas-schema'
-import { CONTEXT_TEMPLATE, GUIDELINES_TEMPLATE, boardSkeleton, TOKENS_TEMPLATE } from '../../local/shared/templates'
+} from '@tian-s-org/schema'
+import { CONTEXT_TEMPLATE, GUIDELINES_TEMPLATE, boardSkeleton, TOKENS_TEMPLATE } from '@tian-s-org/schema'
 import { projectKey } from './paths'
 import type { R2Storage } from './storage'
 

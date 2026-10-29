@@ -4,7 +4,7 @@
  * 前端只按事件换对应画板的 ?v=mtime，不整页刷新；15 秒一次注释心跳防止中间层掐断。
  */
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { isId } from '../../shared/canvas-schema'
+import { isId } from '@tian-s-org/schema'
 import type { EventProvider } from '../storage/types'
 
 const HEARTBEAT_MS = 15_000

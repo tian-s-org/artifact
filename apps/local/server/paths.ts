@@ -2,17 +2,28 @@
  * 路径规则集中在这里：项目根目录怎么找、什么能对外发、什么一律拒绝。
  * 画布组件里不允许出现绝对本地路径，所有路径到这里都还是 POSIX 相对键。
  */
+import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { isId } from '../shared/canvas-schema'
+import { isId } from '@tian-s-org/schema'
 
-/** 仓库根（artifact/）——服务端代码在 apps/local/server/ 下 */
-export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..')
+/** 本包根目录：server/ 的上一级。装成包后就是 node_modules/@tian-s-org/canvas */
+const PKG_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
-/** 默认项目目录：<repo>/projects，可用 ARTIFACT_PROJECTS 覆盖 */
+/** 仓库根（artifact/）——只在 artifact 仓库里直接跑脚本时用得到 */
+export const REPO_ROOT = path.resolve(PKG_ROOT, '../..')
+
+/**
+ * 默认项目目录：
+ * 1) 环境变量优先——`artifact canvas --projects`、`ARTIFACT_PROJECTS` 都靠它指路；
+ * 2) 在 artifact 仓库里直接跑时（包旁边既有 pnpm-workspace.yaml 又有 projects/），用仓库根的 projects/；
+ * 3) 装进别的项目、由使用者起画布时，用当前目录下的 projects/。
+ */
 export function projectsRoot(env: NodeJS.ProcessEnv = process.env): string {
-  const override = env.ARTIFACT_PROJECTS
-  return override ? path.resolve(override) : path.join(REPO_ROOT, 'projects')
+  if (env.ARTIFACT_PROJECTS) return path.resolve(env.ARTIFACT_PROJECTS)
+  const repoProjects = path.join(REPO_ROOT, 'projects')
+  if (fs.existsSync(path.join(REPO_ROOT, 'pnpm-workspace.yaml')) && fs.existsSync(repoProjects)) return repoProjects
+  return path.resolve(process.cwd(), 'projects')
 }
 
 /** 对外可以发的顶层目录。canvas.json / context.md / versions / 任何其它文件一律不发。 */

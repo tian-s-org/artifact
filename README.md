@@ -16,12 +16,13 @@ projects/<项目>/canvas.json                   ← 画板摆在哪、叫什么�
 
 | 形态 | 位置 | 状态 |
 | --- | --- | --- |
-| 本地画布 | `apps/local` | 已完成（Version A） |
+| 底座（本地画布） | `apps/local`，包名 `@tian-s-org/canvas` | 已完成；可作为包装进任意项目，`npx @tian-s-org/cli canvas --projects <目录>` |
 | 云端画布 | `apps/cloud` | 已完成：Worker + R2，`https://artifact.tianyw0.xyz`（见 `apps/cloud/README.md`） |
-| 技能安装 | `packages/cli` | 已完成：`npx <仓库>/packages/cli skill install`（还没发到 npm，先从路径装） |
+| 技能安装 | `packages/cli`，包名 `@tian-s-org/cli` | 已完成：`npx @tian-s-org/cli skill install`（GitHub Packages，私有） |
 
-`packages/canvas-core` 是前后端无关的画布引擎（视口数学、手势判定、点阵网格、取景），本地版与将来的云端版共用；
-原型技能（`skills/prototype`）也会改成引用它，两边画布行为保持一份实现。
+`packages/canvas-core` 是前后端无关的画布引擎（视口数学、手势判定、点阵网格、取景），本地版与云端版共用；
+`packages/schema` 是画布协议（`canvas.json` 解析校验 + 新建骨架模板），本地服务端、云端 Worker、前端共用一份。
+原型技能（`skills/prototype`）将来引用 `canvas-core`，两边画布行为保持一份实现。
 
 ## 快速开始
 
@@ -34,15 +35,28 @@ pnpm start        # 生产：单进程，http://127.0.0.1:4330
 ```
 
 环境变量：`ARTIFACT_PORT`（默认 4330）、`ARTIFACT_API_PORT`（开发模式下 API 端口）、
-`ARTIFACT_PROJECTS`（项目根目录，默认 `<repo>/projects`）。服务只绑 `127.0.0.1`。
+`ARTIFACT_PROJECTS`（项目根目录：仓库里默认 `<repo>/projects`，装成包后在别的项目里默认 `./projects`）。服务只绑 `127.0.0.1`。
 
 打开首页是项目列表；`/p/<项目 id>` 进画布；`?focus=<画板 id>&scale=<0.2–4>` 直接定位到某块画板。
 
 ## 装技能、连云端
 
+底座与 CLI 发布在 GitHub Packages（私有），装一次就不必再 clone 仓库：
+
 ```bash
-npx <仓库>/packages/cli skill install            # 装进 ~/.claude/skills/artifact-canvas
-npx <仓库>/packages/cli skill install --target all --force   # 同时装 Claude Code 与 omp
+npm config set @tian-s-org:registry https://npm.pkg.github.com/
+npm config set //npm.pkg.github.com/:_authToken "<你的 GitHub token>"
+npm i -D @tian-s-org/cli
+
+npx @tian-s-org/cli skill install                            # 装进 ~/.claude/skills/artifact-canvas
+npx @tian-s-org/cli skill install --target all --force       # 同时装 Claude Code 与 omp
+npx @tian-s-org/cli canvas --projects ./designs              # 在任意项目里起画布
+```
+
+仓库里调试时仍可直接用路径（不需要发布）：`npx ./packages/cli canvas --repo . --projects ./designs`。
+云端：
+
+```bash
 pnpm cloud:push brand architecture web-ui        # 把 projects/ 推到云端画布
 pnpm cloud:deploy                                # 重新部署 Worker（含重新打包 SPA）
 ```
@@ -54,10 +68,10 @@ Agent 与脚本走 `Authorization: Bearer <SITE_KEY>`，不需要 Cookie。
 
 ```
 artifact/
-├── apps/local/                 本地画布应用
+├── apps/local/                 底座（包名 @tian-s-org/canvas）
 │   ├── src/                    画布、聚焦层、项目状态、版本面板
 │   ├── server/                 node:http：SPA + /api + /events + /files，文件监听
-│   ├── shared/                 canvas-schema.ts（协议与校验）、templates.ts（新建骨架，两版共用）
+│   ├── bin/                    artifact-canvas：装成包后的启动入口
 │   ├── scripts/                dev、new-board、version、zoom-probe
 │   └── tests/{unit,e2e}        node --test；E2E 用 playwright 驱动 Chromium + WebKit
 ├── apps/cloud/                 云端画布：Cloudflare Worker + R2 + 独立沙箱文件源
@@ -65,7 +79,8 @@ artifact/
 │   ├── scripts/                push（推项目）、smoke（真浏览器冒烟）
 │   └── tests/                  worker 直测（内存版 R2）
 ├── packages/canvas-core/src/   viewport / gestures / geometry，无 React 依赖
-├── packages/cli/               npx 入口：装技能、起本地画布
+├── packages/schema/src/        canvas-schema.ts（协议与校验）、templates.ts（新建骨架，三边共用）
+├── packages/cli/               @tian-s-org/cli：装技能、起本地画布
 └── projects/                   示例项目：brand、architecture、web-ui（也就是协议样例）
 ```
 
@@ -162,7 +177,7 @@ pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build && pnpm start
   拖拽写回磁盘、隔离与安全（同名 class、脚本不执行、外网请求发不出、父页面读不到内部）、
   画板资源（图片真画出来、字体与共享样式表能取到）、版本保存与恢复。
 - `pnpm probe:zoom`：Chromium / WebKit 下不同缩放实现的清晰度对比。
-- 云端：`pnpm --filter @artifact/cloud test`（worker 直测）与 `pnpm --filter @artifact/cloud smoke`
+- 云端：`pnpm --filter @tian-s-org/cloud test`（worker 直测）与 `pnpm --filter @tian-s-org/cloud smoke`
   （真浏览器打开线上画布，查画板是否从文件源加载、沙箱是否生效、改文件是否自动换那一块）。
 
 ## 云端

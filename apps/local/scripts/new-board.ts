@@ -9,7 +9,7 @@
  * 正在运行的画布会通过文件监听自己刷新。
  */
 import path from 'node:path'
-import { isId } from '../shared/canvas-schema'
+import { isId } from '@tian-s-org/schema'
 import { projectsRoot, REPO_ROOT } from '../server/paths'
 import { FsProjectRepository } from '../server/storage/project-repo'
 

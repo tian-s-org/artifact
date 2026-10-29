@@ -9,8 +9,7 @@
 import { watch, type FSWatcher } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { CanvasError, parseCanvas, type CanvasDoc } from '../shared/canvas-schema'
-import { isId } from '../shared/canvas-schema'
+import { CanvasError, isId, parseCanvas, type CanvasDoc } from '@tian-s-org/schema'
 import type { EventProvider } from './storage/types'
 
 const IGNORED_SEGMENTS = new Set(['node_modules', '.git', 'dist', 'dist-server', '.tmp'])

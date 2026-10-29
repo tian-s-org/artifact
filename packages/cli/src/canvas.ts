@@ -1,25 +1,19 @@
 /**
- * artifact canvas：在找到的 artifact 仓库里起本地画布。
+ * artifact canvas：起本地画布。
  *
- * CLI 自己不实现画布，只负责找仓库、拼参数、转信号——
- * 画布与技能安装是两件事，将来云端版也走同一条命令（换 --server）。
+ * 默认启动装在本包依赖里的底座 `@tian-s-org/canvas`（跑它的 bin），
+ * 所以只要装了 CLI，在任意项目里都能起画布，不需要 artifact 仓库在场。
+ *
+ * `--repo <artifact 仓库>` 是开发态回退：直接跑仓库里那份源码。
  */
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 
-export const SERVER_ENTRY = path.join('apps', 'local', 'server', 'index.ts')
-
-/** 从 start 往上找带 apps/local/server/index.ts 的目录 */
-export function findRepoRoot(start: string = process.cwd()): string | null {
-  let dir = path.resolve(start)
-  for (;;) {
-    if (fs.existsSync(path.join(dir, SERVER_ENTRY))) return dir
-    const parent = path.dirname(dir)
-    if (parent === dir) return null
-    dir = parent
-  }
-}
+/** 仓库里底座所在目录（--repo 回退用） */
+const REPO_APP = path.join('apps', 'local')
+const REPO_BIN = path.join(REPO_APP, 'bin', 'artifact-canvas.mjs')
 
 export interface CanvasOptions {
   repo?: string
@@ -27,33 +21,60 @@ export interface CanvasOptions {
   port?: number
 }
 
-export function resolveCanvas(options: CanvasOptions): { repo: string; appDir: string; projects: string } {
-  const repo = options.repo ? path.resolve(options.repo) : findRepoRoot()
-  if (!repo) {
-    throw new Error('找不到 artifact 仓库：在仓库目录里执行，或加 --repo <路径>')
-  }
-  if (!fs.existsSync(path.join(repo, SERVER_ENTRY))) {
-    throw new Error(`${repo} 里没有 ${SERVER_ENTRY}，不像 artifact 仓库`)
-  }
-  return {
-    repo,
-    appDir: path.join(repo, 'apps', 'local'),
-    projects: options.projects ? path.resolve(options.projects) : path.join(repo, 'projects'),
+export interface ResolvedCanvas {
+  /** 底座的启动脚本 */
+  bin: string
+  /** 项目根；undefined 交给底座自己按当前目录推 */
+  projects?: string
+  /** 给人看的来源说明 */
+  label: string
+}
+
+/** 从 start 往上找带 apps/local/bin/artifact-canvas.mjs 的目录 */
+export function findRepoRoot(start: string = process.cwd()): string | null {
+  let dir = path.resolve(start)
+  for (;;) {
+    if (fs.existsSync(path.join(dir, REPO_BIN))) return dir
+    const parent = path.dirname(dir)
+    if (parent === dir) return null
+    dir = parent
   }
 }
 
-/** 起服务并接管信号；返回一个在服务退出时结束的 Promise */
-export function runCanvas(options: CanvasOptions): Promise<number> {
-  const { appDir, projects } = resolveCanvas(options)
-  const env: NodeJS.ProcessEnv = { ...process.env, ARTIFACT_PROJECTS: projects }
-  if (options.port !== undefined) env.ARTIFACT_PORT = String(options.port)
+/** 装在本包依赖里的底座 bin */
+export function findCanvasBin(): string {
+  const require = createRequire(import.meta.url)
+  const pkgJson = require.resolve('@tian-s-org/canvas/package.json')
+  return path.join(path.dirname(pkgJson), 'bin', 'artifact-canvas.mjs')
+}
+
+export function resolveCanvas(options: CanvasOptions): ResolvedCanvas {
+  if (options.repo) {
+    const repo = path.resolve(options.repo)
+    if (!fs.existsSync(path.join(repo, REPO_BIN))) {
+      throw new Error(`${repo} 里没有 ${REPO_BIN}，不像 artifact 仓库`)
+    }
+    return {
+      bin: path.join(repo, REPO_BIN),
+      projects: options.projects ? path.resolve(options.projects) : path.join(repo, 'projects'),
+      label: `仓库  ${repo}`,
+    }
+  }
+  return {
+    bin: findCanvasBin(),
+    projects: options.projects ? path.resolve(options.projects) : undefined,
+    label: '底座  已安装的 @tian-s-org/canvas',
+  }
+}
+
+/** 起画布并接管信号；返回一个在画布退出时结束的 Promise */
+export function runCanvas(resolved: ResolvedCanvas, port?: number): Promise<number> {
+  const args = [resolved.bin]
+  if (resolved.projects) args.push('--projects', resolved.projects)
+  if (port !== undefined) args.push('--port', String(port))
 
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, ['--import', 'tsx', 'server/index.ts'], {
-      cwd: appDir,
-      env,
-      stdio: 'inherit',
-    })
+    const child = spawn(process.execPath, args, { stdio: 'inherit' })
     const forward = (signal: NodeJS.Signals) => () => child.kill(signal)
     process.once('SIGINT', forward('SIGINT'))
     process.once('SIGTERM', forward('SIGTERM'))

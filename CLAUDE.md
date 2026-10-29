@@ -7,9 +7,13 @@
 Agent 原生的无限设计画布。**画布是只读的**：没有编辑按钮、没有属性面板，改设计只能改文件。
 你写 `projects/<项目>/artboards/<画板>/index.html`，用户开着的画布会自己换那一块。
 
-`apps/local` 是本地画布；`apps/cloud` 是云端画布（Cloudflare Worker + R2，线上 `artifact.tianyw0.xyz`，
-跑的是同一份前端）；`packages/canvas-core` 是画布引擎（两版共用，原型技能也会引用它）。
-`packages/cli` 负责把技能装进本地 Agent 技能库。
+- `apps/local` 是**底座**（包名 `@tian-s-org/canvas`）：无限画布 SPA + 本地服务。它可发布，装进任意项目就能起画布。
+- `apps/cloud` 是云端画布（Cloudflare Worker + R2，线上 `artifact.tianyw0.xyz`），跑的是同一份前端。
+- `packages/canvas-core` 是画布引擎（`@tian-s-org/canvas-core`，无 React，两版共用）。
+- `packages/schema` 是画布协议（`@tian-s-org/schema`：`canvas.json` 解析校验 + 新建骨架），本地、云端、前端共用。
+- `packages/cli`（`@tian-s-org/cli`）负责装技能与起画布；它依赖底座，`npx @tian-s-org/cli canvas` 不需要仓库在场。
+
+四个 `@tian-s-org/*` 包发布到 GitHub Packages（私有），发布步骤见文末「发布」。
 
 ## 动手前先读
 
@@ -31,10 +35,10 @@ pnpm versions restore brand <版本 id> [--board board-001]
 pnpm typecheck && pnpm test && pnpm test:e2e
 
 # 云端
-pnpm --filter @artifact/cloud test       # worker 直测（内存版 R2）
+pnpm --filter @tian-s-org/cloud test     # worker 直测（内存版 R2）
 pnpm cloud:push brand architecture       # 把本地 projects/ 推到线上
 pnpm cloud:deploy                        # 重新打包 SPA 并部署 Worker
-pnpm --filter @artifact/cloud smoke      # 真浏览器冒烟线上画布
+pnpm --filter @tian-s-org/cloud smoke    # 真浏览器冒烟线上画布
 ```
 
 `pnpm new-board` 与 `pnpm versions` 直接读写项目目录，不需要服务在跑；服务开着时改完自动刷新。
@@ -100,6 +104,23 @@ pnpm --filter @artifact/cloud smoke      # 真浏览器冒烟线上画布
 - `.board`、`.board-frame`、`.focus-layer`、`.focus-head`、`.canvas-tools`、`.board-id`、`.vp-*`
   这些类名是 E2E 与 `IframeCanvas` 的挂点，改样式时原样留着，别当死类名删掉。
 - 画布网格由 `packages/canvas-core` 直接写到 `background` 上，别在 CSS 里再画一层。
+
+## 发布（GitHub Packages）
+
+四个包都发到 `https://npm.pkg.github.com/`，scope 必须是仓库 owner `@tian-s-org`。
+本地 `.npmrc`（不提交）配 `@tian-s-org:registry` 与 `_authToken` 后，按依赖序发：
+
+```bash
+pnpm --filter @tian-s-org/schema publish
+pnpm --filter @tian-s-org/canvas-core publish
+pnpm --filter @tian-s-org/canvas publish       # prepack 会先 vite build，dist 打进 tarball
+pnpm --filter @tian-s-org/cli publish
+```
+
+- 发布前提：GitHub 上有 `tian-s-org/artifact` 仓库；token 需要 `write:packages`。
+- `workspace:*` 由 pnpm 在打包时换成真实版本号；包之间升级版本要一起发。
+- token 只落本地 `.npmrc` 或发布时的环境，**不进仓库、不进文档**。
+- 发完在一个干净目录 `npm i @tian-s-org/cli && npx @tian-s-org/cli canvas --projects <dir>` 冒烟。
 
 ## 验证改动
 

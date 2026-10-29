@@ -1,5 +1,5 @@
 /** 响应与错误的小工具，行为对齐本地版的 server/http/respond.ts */
-import { CanvasError } from '../../local/shared/canvas-schema'
+import { CanvasError } from '@tian-s-org/schema'
 
 export class HttpError extends Error {
   readonly status: number

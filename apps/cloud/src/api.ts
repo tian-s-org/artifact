@@ -2,7 +2,7 @@
  * /api/* 路由。前六条与本地版逐条一致（前端同一份代码），
  * 后面几条是云端多出来的：Agent 直接读写项目文件、拉一棵树、整包导入。
  */
-import { isId, parseCanvas, CanvasError } from '../../local/shared/canvas-schema'
+import { isId, parseCanvas, CanvasError } from '@tian-s-org/schema'
 import { filesToken, type Access } from './auth'
 import type { Env } from './env'
 import { errorResponse, HttpError, json, readJson } from './http'

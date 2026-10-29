@@ -1,7 +1,7 @@
 /** /api/* 路由。所有写操作走 ProjectRepository，读操作顺带返回每个画板的 mtime 供前端换 ?v=。 */
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import path from 'node:path'
-import { isId } from '../../shared/canvas-schema'
+import { isId } from '@tian-s-org/schema'
 import type { FsStorageProvider } from '../storage/fs-storage'
 import { CANVAS_FILE } from '../storage/project-repo'
 import type { EventProvider, ProjectRepository } from '../storage/types'

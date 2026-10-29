@@ -9,7 +9,7 @@ import {
   parseCanvas,
   safeParseCanvas,
   type BoardSpec,
-} from '../../shared/canvas-schema'
+} from '@tian-s-org/schema'
 
 function sampleBoard(overrides: Partial<BoardSpec> = {}): BoardSpec {
   return {

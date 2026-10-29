@@ -1,7 +1,7 @@
 /**
  * 前端唯一后端入口。全部走相对路径：开发由 Vite 反代到 4331，生产是同一个进程。
  */
-import type { CanvasDoc } from '@shared/canvas-schema'
+import type { CanvasDoc } from '@tian-s-org/schema'
 
 export interface ProjectSummary {
   id: string

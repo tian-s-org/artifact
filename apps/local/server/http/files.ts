@@ -9,7 +9,7 @@ import fs from 'node:fs'
 import { createReadStream } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import path from 'node:path'
-import { isId } from '../../shared/canvas-schema'
+import { isId } from '@tian-s-org/schema'
 import { isServableFile, mimeFor, projectDir, resolveInside } from '../paths'
 
 /**

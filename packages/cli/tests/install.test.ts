@@ -104,7 +104,7 @@ test('找仓库与解析画布参数', async () => {
   const repo = findRepoRoot(path.join(process.cwd(), 'src'))
   assert.ok(repo, '从 packages/cli/src 往上应该能找到 artifact 仓库')
   const resolved = resolveCanvas({ repo })
-  assert.equal(resolved.appDir, path.join(repo, 'apps', 'local'))
+  assert.equal(resolved.bin, path.join(repo, 'apps', 'local', 'bin', 'artifact-canvas.mjs'))
   assert.equal(resolved.projects, path.join(repo, 'projects'))
 
   const empty = await tempDir('artifact-cli-empty-')

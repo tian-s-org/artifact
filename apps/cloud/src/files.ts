@@ -6,7 +6,7 @@
  * 发请求的代码，也既碰不到画布页面，也发不出任何请求。
  * 文件令牌在路径里，所以画板里的相对资源（../../assets/x.png）自动带着它。
  */
-import { isId } from '../../local/shared/canvas-schema'
+import { isId } from '@tian-s-org/schema'
 import type { Env } from './env'
 import { verifyFilesToken } from './auth'
 import { isServableFile, mimeFor, projectKey } from './paths'

@@ -15,7 +15,7 @@ description: 需要在无限画布上做/看设计时使用——品牌、界面
 <项目根>/<项目>/versions/                   版本快照（内容寻址，别手改）
 ```
 
-项目根默认是 artifact 仓库的 `projects/`；用 `artifact canvas --projects <目录>` 或环境变量 `ARTIFACT_PROJECTS` 指到别处。
+项目根默认是当前目录的 `projects/`；用 `artifact canvas --projects <目录>` 或环境变量 `ARTIFACT_PROJECTS` 指到别处。
 
 ## 本地还是云端
 
@@ -25,14 +25,29 @@ description: 需要在无限画布上做/看设计时使用——品牌、界面
 
 云端画板同样是 `sandbox=""` + 独立文件源，规则和本地一样：无脚本、不引用外网、资源用相对路径。
 
+## 安装底座（一次）
+
+画布底座是一个独立包 `@tian-s-org/canvas`（应用壳 + 本地服务），CLI 是 `@tian-s-org/cli`，
+都发布在 GitHub Packages（私有）。装一次就能在任意项目里起画布，**不需要 clone artifact 仓库**。
+
+先连上私有源（一次即可，token 用你自己的 GitHub token，别写进项目）：
+
+```bash
+npm config set @tian-s-org:registry https://npm.pkg.github.com/
+npm config set //npm.pkg.github.com/:_authToken "<你的 GitHub token>"
+npm i -D @tian-s-org/cli
+```
+
+- `@tian-s-org/cli` 会带上下面的底座与协议包，装它一个就够。
+- 没权限连私有源、或在 artifact 仓库里调试时，直接用仓库里的 CLI，跳过安装：
+  `npx <artifact 仓库>/packages/cli canvas --repo <artifact 仓库> --projects <目录>`。
+
 ## 起画布
 
 ```bash
-npx <artifact 仓库>/packages/cli canvas                 # 在 artifact 仓库里直接起
-npx <artifact 仓库>/packages/cli canvas --projects ~/designs --port 4330
+npx @tian-s-org/cli canvas --projects ./designs     # 项目根默认 ./projects
+npx @tian-s-org/cli canvas --projects ./designs --port 4331
 ```
-
-（还没发到 npm，所以是带路径的 npx；发版后就是 `npx @artifact/cli canvas`。）
 
 打开 `http://127.0.0.1:4330`：`/` 是项目列表，`/p/<项目 id>` 进画布，`?focus=<画板 id>&scale=<0.2–4>` 直接定位到某块画板。
 

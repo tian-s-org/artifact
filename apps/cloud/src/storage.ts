@@ -4,7 +4,7 @@
  * 键就是本地版的相对路径，前面加 `<项目 id>/`；R2 的单对象 put 本身是原子的，
  * 不需要本地那套「写临时文件再 rename」。
  */
-import { CanvasError } from '../../local/shared/canvas-schema'
+import { CanvasError } from '@tian-s-org/schema'
 import type { Bucket } from './env'
 
 export interface FileEntry {

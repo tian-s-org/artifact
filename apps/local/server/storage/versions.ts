@@ -10,7 +10,7 @@
 import { createHash } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { CanvasError, isId, parseCanvas } from '../../shared/canvas-schema'
+import { CanvasError, isId, parseCanvas } from '@tian-s-org/schema'
 import { projectDir, resolveInside } from '../paths'
 import { withProjectLock } from './locks'
 import { CANVAS_FILE } from './project-repo'

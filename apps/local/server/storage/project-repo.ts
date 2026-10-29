@@ -16,8 +16,8 @@ import {
   parseCanvas,
   type BoardSpec,
   type CanvasDoc,
-} from '../../shared/canvas-schema'
-import { boardSkeleton, CONTEXT_TEMPLATE, GUIDELINES_TEMPLATE, TOKENS_TEMPLATE } from '../../shared/templates'
+} from '@tian-s-org/schema'
+import { boardSkeleton, CONTEXT_TEMPLATE, GUIDELINES_TEMPLATE, TOKENS_TEMPLATE } from '@tian-s-org/schema'
 import { projectDir, resolveInside } from '../paths'
 import { withProjectLock } from './locks'
 import type { CreateProjectInput, ProjectRepository } from './types'

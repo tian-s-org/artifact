@@ -4,7 +4,7 @@
  *
  * 协议定义直接复用本地版那一份，避免两边各写一套校验。
  */
-import { isId } from '../../local/shared/canvas-schema'
+import { isId } from '@tian-s-org/schema'
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',

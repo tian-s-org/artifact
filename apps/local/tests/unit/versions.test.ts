@@ -3,7 +3,7 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
-import { CanvasError } from '../../shared/canvas-schema'
+import { CanvasError } from '@tian-s-org/schema'
 import { FsProjectRepository } from '../../server/storage/project-repo'
 import { FsVersionStore, VERSION_ID_RE } from '../../server/storage/versions'
 

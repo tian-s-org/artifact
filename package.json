@@ -8,18 +8,18 @@
     "onlyBuiltDependencies": ["esbuild"]
   },
   "scripts": {
-    "dev": "pnpm --filter @artifact/local dev",
+    "dev": "pnpm --filter @tian-s-org/canvas dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "start": "pnpm --filter @artifact/local start",
+    "start": "pnpm --filter @tian-s-org/canvas start",
     "test": "pnpm -r test",
-    "test:e2e": "pnpm --filter @artifact/local test:e2e",
-    "cloud:dev": "pnpm --filter @artifact/cloud dev",
-    "cloud:deploy": "pnpm --filter @artifact/cloud deploy",
-    "cloud:push": "pnpm --filter @artifact/cloud push --",
-    "artifact": "pnpm --filter @artifact/cli dev --",
-    "new-board": "pnpm --filter @artifact/local new-board",
-    "versions": "pnpm --filter @artifact/local versions",
-    "probe:zoom": "pnpm --filter @artifact/local probe:zoom"
+    "test:e2e": "pnpm --filter @tian-s-org/canvas test:e2e",
+    "cloud:dev": "pnpm --filter @tian-s-org/cloud dev",
+    "cloud:deploy": "pnpm --filter @tian-s-org/cloud deploy",
+    "cloud:push": "pnpm --filter @tian-s-org/cloud push --",
+    "artifact": "pnpm --filter @tian-s-org/cli dev --",
+    "new-board": "pnpm --filter @tian-s-org/canvas new-board",
+    "versions": "pnpm --filter @tian-s-org/canvas versions",
+    "probe:zoom": "pnpm --filter @tian-s-org/canvas probe:zoom"
   }
 }

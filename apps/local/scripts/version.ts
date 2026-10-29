@@ -10,7 +10,7 @@
  * 只恢复单块画板时不会动 canvas.json 和其他画板；恢复前会自动存一份备份。
  */
 import path from 'node:path'
-import { isId } from '../shared/canvas-schema'
+import { isId } from '@tian-s-org/schema'
 import { projectsRoot, REPO_ROOT } from '../server/paths'
 import { FsVersionStore, type VersionEntry } from '../server/storage/versions'
 

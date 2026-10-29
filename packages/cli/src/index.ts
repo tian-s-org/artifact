@@ -4,7 +4,7 @@
  *
  *   artifact skill install [--target claude|omp|project|all] [--dir <技能库根>] [--force]
  *   artifact skill list
- *   artifact canvas [--repo <artifact 仓库>] [--projects <项目根>] [--port 4330]
+ *   artifact canvas [--projects <项目根>] [--port 4330] [--repo <artifact 仓库>]
  */
 import { cliVersion, installSkill, installedInfo, SKILL_NAME } from './install'
 import { customTarget, resolveTargets, skillTargets } from './targets'
@@ -17,15 +17,15 @@ const USAGE = `artifact —— Agent 原生设计画布
       把「${SKILL_NAME}」技能装进本地 Agent 技能库（默认 claude，all = 所有用户级技能库）
   artifact skill list
       看每个技能库装没装、装的是哪一版
-  artifact canvas [--repo <artifact 仓库>] [--projects <项目根>] [--port 4330]
-      起本地画布（默认在仓库的 projects/ 下找项目）
+  artifact canvas [--projects <项目根>] [--port 4330] [--repo <artifact 仓库>]
+      起本地画布；项目根默认当前目录的 projects/，仓库里调试时用 --repo
 
 示例：
-  npx <artifact 仓库>/packages/cli skill install
-  npx <artifact 仓库>/packages/cli skill install --target all --force
-  npx <artifact 仓库>/packages/cli canvas --projects ~/designs --port 4330
+  npx @tian-s-org/cli skill install
+  npx @tian-s-org/cli skill install --target all --force
+  npx @tian-s-org/cli canvas --projects ~/designs
 
-（还没发到 npm；发版后把路径换成 @artifact/cli 即可）`
+（发布在 GitHub Packages：@tian-s-org/cli。没配 registry 时用仓库里的 packages/cli。）`
 
 interface Parsed {
   command: string[]
@@ -94,10 +94,10 @@ async function canvas(parsed: Parsed): Promise<number> {
   if (port !== undefined && (!Number.isInteger(port) || port <= 0 || port > 65535)) {
     throw new Error(`端口不合法：${portRaw}`)
   }
-  const { repo, projects } = resolveCanvas({ repo: stringFlag(parsed, 'repo'), projects: stringFlag(parsed, 'projects') })
-  console.log(`仓库  ${repo}`)
-  console.log(`项目  ${projects}`)
-  return runCanvas({ repo, projects, port })
+  const resolved = resolveCanvas({ repo: stringFlag(parsed, 'repo'), projects: stringFlag(parsed, 'projects') })
+  console.log(resolved.label)
+  console.log(`项目  ${resolved.projects ?? '（当前目录的 projects/）'}`)
+  return runCanvas(resolved, port)
 }
 
 export async function main(argv: string[]): Promise<void> {

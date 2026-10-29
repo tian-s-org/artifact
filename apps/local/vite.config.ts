@@ -15,7 +15,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(here, 'src'),
-      '@shared': path.resolve(here, 'shared'),
     },
   },
   server: {

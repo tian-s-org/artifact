@@ -1,11 +1,26 @@
 {
-  "name": "@artifact/cli",
-  "private": true,
+  "name": "@tian-s-org/cli",
   "version": "0.1.0",
   "type": "module",
+  "private": false,
   "description": "把 artifact 画布技能装进本地 Agent 技能库，并一键起本地画布",
   "bin": {
     "artifact": "./bin/artifact.mjs"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "bin",
+    "src",
+    "skills"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tian-s-org/artifact.git"
   },
   "scripts": {
     "dev": "node --import tsx src/index.ts",
@@ -14,6 +29,7 @@
     "test": "node --test --import tsx tests/*.test.ts"
   },
   "dependencies": {
+    "@tian-s-org/canvas": "workspace:*",
     "tsx": "^4.19.2"
   },
   "devDependencies": {

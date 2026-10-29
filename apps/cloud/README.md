@@ -1,6 +1,7 @@
 # 云端画布（apps/cloud）
 
-一个 Cloudflare Worker + R2：前端就是 `apps/local` 那同一份 SPA，打包进 `web/`，存储与项目仓库换成 R2 实现。
+一个 Cloudflare Worker + R2：前端就是底座 `@tian-s-org/canvas`（`apps/local`）那同一份 SPA，打包进 `web/`，
+存储与项目仓库换成 R2 实现，协议来自 `@tian-s-org/schema`。
 画布内容仍然由 Agent 写文件——本地写目录，云端写 HTTP 接口。
 
 线上：`https://artifact.tianyw0.xyz`（`/p/<项目 id>` 进画布）。
@@ -55,10 +56,10 @@ Cloudflare 在边缘就把 `PUT` / `PATCH` / `DELETE` 挡掉（连不存在的�
 ## 部署
 
 ```bash
-pnpm --filter @artifact/cloud build:web        # 打包 SPA 到 apps/cloud/web（gitignore）
+pnpm --filter @tian-s-org/cloud build:web      # 打包底座 SPA 到 apps/cloud/web（gitignore）
 pnpm cloud:deploy                              # typecheck + build:web + wrangler deploy
 pnpm cloud:push brand architecture web-ui      # 把本地 projects/ 推上去
-pnpm --filter @artifact/cloud smoke            # 真浏览器冒烟：3 块画板、沙箱、改文件自动刷新
+pnpm --filter @tian-s-org/cloud smoke          # 真浏览器冒烟：3 块画板、沙箱、改文件自动刷新
 ```
 
 密钥（`wrangler secret put` 上传，本地写在 `apps/cloud/.dev.vars`，已 gitignore）：

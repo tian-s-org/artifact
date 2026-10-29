@@ -17,9 +17,8 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@shared/*": ["shared/*"]
+      "@/*": ["src/*"]
     }
   },
-  "include": ["src", "server", "shared", "scripts", "tests", "vite.config.ts"]
+  "include": ["src", "server", "scripts", "tests", "vite.config.ts"]
 }

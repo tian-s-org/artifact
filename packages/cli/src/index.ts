@@ -18,12 +18,12 @@ const USAGE = `artifact-cli —— Agent 原生设计画布的命令行
   artifact-cli skill list
       看每个技能库装没装、装的是哪一版
   artifact-cli canvas [--projects <项目根>] [--port 4330] [--repo <artifact 仓库>]
-      起本地画布；项目根默认当前目录的 projects/，仓库里调试时用 --repo
+      起本地画布；项目根默认当前目录的 .artifact/，仓库里调试时用 --repo
 
 示例：
   npx @tian-s-org/artifact-cli skill install
   npx @tian-s-org/artifact-cli skill install --target all --force
-  npx @tian-s-org/artifact-cli canvas --projects ~/designs
+  npx @tian-s-org/artifact-cli canvas            # 默认读 ./.artifact
 
 （发布在 GitHub Packages：@tian-s-org/artifact-cli。没配 registry 时用仓库里的 packages/cli。）`
 
@@ -96,7 +96,7 @@ async function canvas(parsed: Parsed): Promise<number> {
   }
   const resolved = resolveCanvas({ repo: stringFlag(parsed, 'repo'), projects: stringFlag(parsed, 'projects') })
   console.log(resolved.label)
-  console.log(`项目  ${resolved.projects ?? '（当前目录的 projects/）'}`)
+  console.log(`项目  ${resolved.projects ?? '（当前目录的 .artifact/）'}`)
   return runCanvas(resolved, port)
 }
 

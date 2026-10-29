@@ -15,7 +15,27 @@ description: 需要在无限画布上做/看设计时使用——品牌、界面
 <项目根>/<项目>/versions/                   版本快照（内容寻址，别手改）
 ```
 
-项目根默认是当前目录的 `projects/`；用 `artifact-cli canvas --projects <目录>` 或环境变量 `ARTIFACT_PROJECTS` 指到别处。
+项目根默认是当前目录的 `.artifact/`（隐藏目录，不跟项目自己的文件混）；用 `artifact-cli canvas --projects <目录>` 或环境变量 `ARTIFACT_PROJECTS` 指到别处。
+
+## 建一个项目
+
+当前目录里没有 `.artifact/` 就是还没开始。在**被设计的那个项目**根下建：
+
+```
+<项目>/.artifact/<项目 id>/
+├── canvas.json
+├── context.md
+├── design-system/{tokens.json,guidelines.md}
+└── artboards/<画板 id>/index.html
+```
+
+`canvas.json` 最小可用：
+
+```json
+{ "protocol": 1, "id": "<项目 id>", "name": "<名字>", "boards": [] }
+```
+
+`id` 必须等于目录名；画板只在 `boards` 里登记后才会出现在画布上。`context.md` 写项目背景，`design-system/` 写令牌与规则（没有就先摘现有原型的色板和字号）。
 
 ## 本地还是云端
 
@@ -45,7 +65,8 @@ npm i -D @tian-s-org/artifact-cli
 ## 起画布
 
 ```bash
-npx @tian-s-org/artifact-cli canvas --projects ./designs     # 项目根默认 ./projects
+npx @tian-s-org/artifact-cli canvas                          # 项目根 = 当前目录的 .artifact/
+npx @tian-s-org/artifact-cli canvas --projects ./designs     # 指到别处
 npx @tian-s-org/artifact-cli canvas --projects ./designs --port 4331
 ```
 

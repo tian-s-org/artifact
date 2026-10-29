@@ -35,7 +35,7 @@ pnpm start        # 生产：单进程，http://127.0.0.1:4330
 ```
 
 环境变量：`ARTIFACT_PORT`（默认 4330）、`ARTIFACT_API_PORT`（开发模式下 API 端口）、
-`ARTIFACT_PROJECTS`（项目根目录：仓库里默认 `<repo>/projects`，装成包后在别的项目里默认 `./projects`）。服务只绑 `127.0.0.1`。
+`ARTIFACT_PROJECTS`（项目根目录：仓库里默认 `<repo>/projects`，装成包后在别的项目里默认 `./.artifact`）。服务只绑 `127.0.0.1`。
 
 打开首页是项目列表；`/p/<项目 id>` 进画布；`?focus=<画板 id>&scale=<0.2–4>` 直接定位到某块画板。
 

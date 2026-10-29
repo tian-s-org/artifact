@@ -16,14 +16,21 @@ export const REPO_ROOT = path.resolve(PKG_ROOT, '../..')
 /**
  * 默认项目目录：
  * 1) 环境变量优先——`artifact-cli canvas --projects`、`ARTIFACT_PROJECTS` 都靠它指路；
- * 2) 在 artifact 仓库里直接跑时（包旁边既有 pnpm-workspace.yaml 又有 projects/），用仓库根的 projects/；
- * 3) 装进别的项目、由使用者起画布时，用当前目录下的 projects/。
+ * 2) 当前目录在 artifact 仓库里时（且有 projects/），用仓库根的 projects/（示例项目）；
+ * 3) 装进别的项目、由使用者起画布时，用当前目录下的 .artifact/（隐藏目录，不跟项目自己的文件混）。
  */
 export function projectsRoot(env: NodeJS.ProcessEnv = process.env): string {
   if (env.ARTIFACT_PROJECTS) return path.resolve(env.ARTIFACT_PROJECTS)
   const repoProjects = path.join(REPO_ROOT, 'projects')
-  if (fs.existsSync(path.join(REPO_ROOT, 'pnpm-workspace.yaml')) && fs.existsSync(repoProjects)) return repoProjects
-  return path.resolve(process.cwd(), 'projects')
+  // 只有「当前就在仓库里」才算仓库内开发；从别的项目调用仓库里的 CLI 时，目录是别人的
+  if (isInside(REPO_ROOT, process.cwd()) && fs.existsSync(repoProjects)) return repoProjects
+  return path.resolve(process.cwd(), '.artifact')
+}
+
+/** child 是否就是 parent 或在它下面 */
+function isInside(parent: string, child: string): boolean {
+  const rel = path.relative(parent, child)
+  return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel))
 }
 
 /** 对外可以发的顶层目录。canvas.json / context.md / versions / 任何其它文件一律不发。 */

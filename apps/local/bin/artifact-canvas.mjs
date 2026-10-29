@@ -16,7 +16,7 @@ const USAGE = `artifact-canvas —— 起本地画布
 用法：
   npx @tian-s-org/canvas [--projects <项目根>] [--port 4330]
 
-  --projects <目录>   画布读哪个目录下的 <项目>/canvas.json（默认当前目录的 projects/）
+  --projects <目录>   画布读哪个目录下的 <项目>/canvas.json（默认当前目录的 .artifact/）
   --port <端口>       监听端口（默认 4330）
 
 打开 http://127.0.0.1:<端口>：/ 是项目列表，/p/<项目 id> 进画布。`

@@ -10,3 +10,6 @@ tests/.tmp/
 apps/cloud/web/
 apps/cloud/.wrangler/
 apps/cloud/.dev.vars
+
+# 发布用：本地 npm 配置里带 token，绝不提交
+.npmrc

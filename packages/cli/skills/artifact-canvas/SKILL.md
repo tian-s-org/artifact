@@ -83,7 +83,7 @@ pnpm new-board <项目> "<画板名>" [--id board-004] [--size 1440x900]
 
 ## 版本
 
-大改之前留一版：
+大改之前留一版。下面三条是 artifact 仓库里的命令；装成包的项目直接用画布工具栏的「版本」面板：
 
 ```bash
 pnpm versions save <项目> "<这一版是什么>"

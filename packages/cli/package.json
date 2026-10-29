@@ -1,6 +1,6 @@
 {
   "name": "@tian-s-org/artifact-cli",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "type": "module",
   "private": false,
   "description": "把 artifact 画布技能装进本地 Agent 技能库，并一键起本地画布",

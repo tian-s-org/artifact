@@ -7,6 +7,9 @@ description: 需要在无限画布上做/看设计时使用——品牌、界面
 
 画布是**只读**的：没有绘图工具、图层面板、属性面板。**想改设计就改文件**，开着的画布会自己换那一块，不刷新整页、不打断缩放。
 
+这份技能是写给你的（agent）：**安装、建目录、起画布都由你执行**，用户只看画布、给方向。
+命令都自己跑，别把终端步骤甩给用户；需要 token/权限这类只有他能给的东西，再问一次。
+
 ## 三个位置
 
 ```
@@ -47,32 +50,53 @@ description: 需要在无限画布上做/看设计时使用——品牌、界面
 
 云端画板同样是 `sandbox=""` + 独立文件源，规则和本地一样：无脚本、不引用外网、资源用相对路径。
 
-## 安装底座（一次）
+## 装底座（agent 自己跑，别让用户敲命令）
 
-画布底座是一个独立包 `@tian-s-org/canvas`（应用壳 + 本地服务），CLI 是 `@tian-s-org/artifact-cli`，
-都发布在 GitHub Packages（私有）。装一次就能在任意项目里起画布，**不需要 clone artifact 仓库**。
+画布底座是 `@tian-s-org/canvas`（应用壳 + 本地服务），入口是 `@tian-s-org/artifact-cli`，
+发布在 GitHub Packages（私有）。装一次即可，**不需要 clone artifact 仓库**。
 
-先连上私有源（一次即可，token 用你自己的 GitHub token，别写进项目）：
+**先探，别重复装**：
+
+```bash
+npx --no-install artifact-cli --version   # 有版本号就是装好了，直接跳到「起画布」
+```
+
+**没装才装**（token 优先用本机已登录的 gh；拿不到再问用户要一次，绝不写进项目）：
 
 ```bash
 npm config set @tian-s-org:registry https://npm.pkg.github.com/
-npm config set //npm.pkg.github.com/:_authToken "<你的 GitHub token>"
+npm config set //npm.pkg.github.com/:_authToken "$(gh auth token)"
 npm i -D @tian-s-org/artifact-cli
 ```
 
-- `@tian-s-org/artifact-cli` 会带上下面的底座与协议包，装它一个就够。
-- 没权限连私有源、或在 artifact 仓库里调试时，直接用仓库里的 CLI，跳过安装：
+- 装它一个就够，底座与协议包会自动带上。
+- 没权限连私有源、或在 artifact 仓库里调试时跳过安装，直接用仓库里的 CLI：
   `npx <artifact 仓库>/packages/cli canvas --repo <artifact 仓库> --projects <目录>`。
 
-## 起画布
+## 起画布（后台起，别卡住自己）
+
+**先看在不在跑**，已经在跑就直接用，别重复起、别 kill 别人的进程：
 
 ```bash
-npx @tian-s-org/artifact-cli canvas                          # 项目根 = 当前目录的 .artifact/
-npx @tian-s-org/artifact-cli canvas --projects ./designs     # 指到别处
+curl -sf http://127.0.0.1:4330/api/projects >/dev/null && echo already-running
+```
+
+没在跑就后台起（用 agent 自己的后台执行能力；Claude Code 里用 run_in_background，不要前台阻塞）：
+
+```bash
+npx @tian-s-org/artifact-cli canvas            # 项目根 = 当前目录的 .artifact/
 npx @tian-s-org/artifact-cli canvas --projects ./designs --port 4331
 ```
 
-打开 `http://127.0.0.1:4330`：`/` 是项目列表，`/p/<项目 id>` 进画布，`?focus=<画板 id>&scale=<0.2–4>` 直接定位到某块画板。
+起来后轮询就绪，再开页面：
+
+```bash
+until curl -sf http://127.0.0.1:4330/api/projects >/dev/null; do sleep 0.3; done
+open http://127.0.0.1:4330                    # 项目列表；/p/<项目 id> 进画布
+```
+
+`?focus=<画板 id>&scale=<0.2–4>` 可直接定位到某块画板，适合把「刚改的那一屏」直接甩给用户看。
+端口被占就换一个（`--port 4331`），或者先把已有的实例用起来。
 
 ## 新建画板
 

@@ -44,7 +44,7 @@ npx @tian-s-org/canvas open        # 打开画布
     {
       "id": "board-001",
       "name": "技能库",
-      "x": 0, "y": 0, "width": 1440, "height": 900,
+      "x": 0, "y": 0, "width": 1200, "height": 750,
       "file": "artboards/board-001/index.html",
       "order": 1
     }

@@ -87,6 +87,6 @@ test('nextBoardPosition 落在整体右侧、与最上面顶边对齐', () => {
 test('makeBoard 生成的文件名与 id 一致，非法 id 抛错', () => {
   const board = makeBoard({ id: 'board-009', name: '新画板' })
   assert.equal(board.file, 'artboards/board-009/index.html')
-  assert.equal(board.width, 1440)
+  assert.equal(board.width, 1200)
   assert.throws(() => makeBoard({ id: 'Board 9', name: 'x' }), CanvasError)
 })

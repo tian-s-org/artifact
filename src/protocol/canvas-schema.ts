@@ -171,8 +171,8 @@ export function makeBoard(input: {
     name,
     x: input.x ?? 0,
     y: input.y ?? 0,
-    width: input.width ?? 1440,
-    height: input.height ?? 900,
+    width: input.width ?? 1200,
+    height: input.height ?? 750,
     file: `artboards/${id}/index.html`,
     order: input.order ?? 1,
   }

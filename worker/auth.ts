@@ -117,6 +117,10 @@ export async function sessionCookie(session: Session, env: Env): Promise<string>
   return `${SESSION_COOKIE}=${encodeURIComponent(value)}; Path=/; Max-Age=${SESSION_DAYS * 86400}; HttpOnly; Secure; SameSite=Lax`
 }
 
+export function clearSessionCookie(): string {
+  return `${SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`
+}
+
 export function sessionExpiry(): number {
   return Date.now() + SESSION_DAYS * 86400 * 1000
 }

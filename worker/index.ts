@@ -10,6 +10,7 @@
 import { handleApi } from './api'
 import {
   checkAccess,
+  clearSessionCookie,
   consumeCliCode,
   createCliCode,
   createCliToken,
@@ -42,12 +43,6 @@ function redirect(location: string, cookie?: string): Response {
 /** OAuth 回调地址：线上用正式域名；本地 wrangler dev 用 8787 */
 function callbackOrigin(env: Env): string {
   return env.DEV === '1' ? 'http://localhost:8787' : `https://${env.APP_HOST}`
-}
-
-function loginUrl(request: Request, env: Env): string | null {
-  if (!googleEnabled(env)) return null
-  const url = new URL(request.url)
-  return `/auth/google?redirect=${encodeURIComponent(url.pathname + url.search)}`
 }
 
 /** 只允许 CLI 回环地址作为一次性 code 的去向 */
@@ -174,15 +169,23 @@ export default {
 
       const access = await checkAccess(request, env, storage)
 
+      if (url.pathname === '/api/me') {
+        if (access.email === null) return fail(401, 'unauthorized', '未登录')
+        return json(200, { email: access.email, canWrite: access.canWrite })
+      }
+
+      if (url.pathname === '/api/logout' && request.method === 'POST') {
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'content-type': 'application/json', 'set-cookie': clearSessionCookie(), 'cache-control': 'no-store' },
+        })
+      }
+
       if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
         return await handleApi(request, url, env, { storage }, access)
       }
 
-      // 画布页面：链接即权限，直接看
-      if (url.pathname.startsWith('/c/')) return withSecurityHeaders(await env.ASSETS.fetch(request))
-
-      // 其它页面（画布列表）：要登录
-      if (!access.allowed) return blockedPage(loginUrl(request, env))
+      // 页面：SPA 自己判断登录态（个人中心 / 画布），不用服务端拦截
       return withSecurityHeaders(await env.ASSETS.fetch(request))
     } catch (err) {
       return errorResponse(err)

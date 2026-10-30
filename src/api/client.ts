@@ -59,6 +59,19 @@ export function fetchCanvases(): Promise<{ canvases: CanvasSummary[] }> {
   return request('/api/canvases')
 }
 
+export interface Me {
+  email: string
+  canWrite: boolean
+}
+
+export function fetchMe(): Promise<Me> {
+  return request('/api/me')
+}
+
+export async function logout(): Promise<void> {
+  await request('/api/logout', { method: 'POST' })
+}
+
 /** 画板文件地址：带 ?v=<mtime>，内容不变就不重载 iframe */
 export function boardSrc(file: string, mtime: number, filesBase: string): string {
   const base = filesBase.replace(/\/$/, '')

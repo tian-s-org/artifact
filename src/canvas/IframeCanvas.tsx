@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Viewport, type Rect } from '@tian-s-org/canvas-core'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Viewport, type Rect, type Transform } from '@tian-s-org/canvas-core'
 import { BoardFrame } from './BoardFrame'
+import { Minimap } from './Minimap'
 import { readDeepLink } from './deep-link'
 import type { BoardView } from './types'
 
@@ -16,6 +17,7 @@ interface Props {
 
 const FIT_PADDING = 80
 const VIEW_KEY = 'artifact:view'
+const MAP_KEY = 'artifact:minimap'
 
 /** 工具条上的按钮长得一样，尺寸写一份 */
 const TOOL_BUTTON = 'h-24 cursor-pointer rounded-[6px] px-9 text-[#3c3c3c] hover:bg-black/6'
@@ -54,6 +56,42 @@ export function IframeCanvas({ boards, onOpen, overlayOpen, showSpecs, onToggleS
   const boardsRef = useRef(boards)
   boardsRef.current = boards
 
+  /* 缩略图要跟着镜头走：transform 每帧都变，压到一帧一次 setState，
+     画框那层用 useMemo 挡住，不然平移时会把所有 iframe 一起重渲染 */
+  const [view, setView] = useState<Transform>({ x: 0, y: 0, scale: 1 })
+  const [box, setBox] = useState({ width: 0, height: 0 })
+  const [showMap, setShowMap] = useState(() => {
+    try {
+      return localStorage.getItem(MAP_KEY) !== '0'
+    } catch {
+      return true
+    }
+  })
+  const pendingView = useRef<Transform>({ x: 0, y: 0, scale: 1 })
+  const rafId = useRef(0)
+  const syncView = useCallback((t: Transform) => {
+    pendingView.current = t
+    if (rafId.current) return
+    rafId.current = requestAnimationFrame(() => {
+      rafId.current = 0
+      setView(pendingView.current)
+    })
+  }, [])
+
+  useEffect(() => () => {
+    if (rafId.current) cancelAnimationFrame(rafId.current)
+  }, [])
+
+  useEffect(() => {
+    const host = hostRef.current
+    if (!host) return
+    const read = () => setBox({ width: host.clientWidth, height: host.clientHeight })
+    read()
+    const ro = new ResizeObserver(read)
+    ro.observe(host)
+    return () => ro.disconnect()
+  }, [])
+
   useEffect(() => {
     const host = hostRef.current
     const world = worldRef.current
@@ -67,10 +105,12 @@ export function IframeCanvas({ boards, onOpen, overlayOpen, showSpecs, onToggleS
         if (pctRef.current) pctRef.current.textContent = `${Math.round(t.scale * 100)}%`
         // 画框标签反向缩放，屏幕上保持固定字号（Figma 同款）
         world.style.setProperty('--label-scale', String(1 / t.scale))
+        syncView(t)
       },
     })
     vp.attach()
     vpRef.current = vp
+    syncView(vp.transform)
 
     const timer = setTimeout(() => {
       vp.resetIfNothingVisible([...world.querySelectorAll('.board')])
@@ -91,10 +131,41 @@ export function IframeCanvas({ boards, onOpen, overlayOpen, showSpecs, onToggleS
     fittedRef.current = true
     applyInitialView(vp, boards)
     worldRef.current?.style.setProperty('--label-scale', String(1 / vp.transform.scale))
-  }, [boards])
+    syncView(vp.transform)
+  }, [boards, syncView])
 
   const fit = useCallback(() => {
     vpRef.current?.fitToRects(rects(boardsRef.current), { padding: FIT_PADDING, maxScale: 1 })
+  }, [])
+
+  /* 镜头每帧都在变，画框这一层不能跟着重渲染 */
+  const frames = useMemo(
+    () =>
+      boards.map((board) => (
+        <BoardFrame
+          key={board.id}
+          board={board}
+          onFocus={onOpen}
+          showSpecs={showSpecs}
+          interactive={altDown}
+        />
+      )),
+    [boards, onOpen, showSpecs, altDown],
+  )
+
+  const jumpTo = useCallback((x: number, y: number) => {
+    vpRef.current?.centerRect({ x, y, width: 0, height: 0 })
+  }, [])
+
+  const toggleMap = useCallback(() => {
+    setShowMap((on) => {
+      try {
+        localStorage.setItem(MAP_KEY, on ? '0' : '1')
+      } catch {
+        /* 存不了就算了，只影响下次默认值 */
+      }
+      return !on
+    })
   }, [])
 
   useEffect(() => {
@@ -115,15 +186,7 @@ export function IframeCanvas({ boards, onOpen, overlayOpen, showSpecs, onToggleS
       {/* 网格由 canvas-core 直接写到 background 上，这里只管铺满屏幕 */}
       <div ref={hostRef} className="canvas-host fixed inset-0 touch-none overflow-hidden overscroll-none">
         <div ref={worldRef} className="canvas-world absolute top-0 left-0 origin-top-left">
-          {boards.map((board) => (
-            <BoardFrame
-              key={board.id}
-              board={board}
-              onFocus={onOpen}
-              showSpecs={showSpecs}
-              interactive={altDown}
-            />
-          ))}
+          {frames}
         </div>
       </div>
 
@@ -144,6 +207,15 @@ export function IframeCanvas({ boards, onOpen, overlayOpen, showSpecs, onToggleS
         >
           尺寸
         </button>
+        <button
+          type="button"
+          className={`${TOOL_BUTTON} ${showMap ? 'bg-black/6 text-ink' : ''}`}
+          aria-pressed={showMap}
+          title="右下角的缩略图：拖它换镜头"
+          onClick={toggleMap}
+        >
+          缩略图
+        </button>
         <button type="button" className={TOOL_BUTTON} onClick={fit}>
           适应窗口
         </button>
@@ -157,6 +229,17 @@ export function IframeCanvas({ boards, onOpen, overlayOpen, showSpecs, onToggleS
           100%
         </span>
       </div>
+
+      {/* 缩略图：右下角，拖一下就换镜头 */}
+      {showMap && (
+        <div
+          className={`canvas-map fixed right-16 bottom-16 z-200 rounded-[10px] bg-white/88 p-6 shadow-[0_1px_2px_rgba(0,0,0,.1),0_8px_24px_rgba(0,0,0,.12)] backdrop-blur-[20px] backdrop-saturate-[160%] ${
+            overlayOpen ? 'invisible' : ''
+          }`}
+        >
+          <Minimap boards={boards} view={view} host={box} onJump={jumpTo} />
+        </div>
+      )}
     </>
   )
 }

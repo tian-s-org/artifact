@@ -11,7 +11,7 @@
  * 写操作一律 POST：Cloudflare 在边缘就挡 PUT/PATCH/DELETE。
  */
 import { CanvasError, parseCanvas } from '@tian-s-org/schema'
-import { filesToken, type Access } from './auth'
+import { filesToken, googleEnabled, type Access } from './auth'
 import type { Env } from './env'
 import { errorResponse, HttpError, json, readJson } from './http'
 import { isWritableFile, mimeFor } from './paths'
@@ -98,7 +98,12 @@ export async function handleApi(
 
     if (resource === 'meta' && segments.length === 2) {
       if (method !== 'GET') throw new HttpError(405, 'method', '不支持的方法')
-      return json(200, { cloud: true, gated: env.SITE_KEY !== undefined && env.SITE_KEY !== '', canWrite: access.canWrite })
+      return json(200, {
+        cloud: true,
+        gated: googleEnabled(env),
+        canWrite: access.canWrite,
+        email: access.email,
+      })
     }
 
     // 前端每 2.5 秒轮询一次：layout.json + 每块画板的 mtime + 文件源基地址

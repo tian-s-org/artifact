@@ -1,110 +1,49 @@
 # artifact
 
-Agent 原生的无限设计画布，本地与云端两版。
-
-Agent（Claude Code）在项目目录里直接写设计文件，画布只负责看：平移、缩放、并排比较、双击聚焦、版本回退。
-没有画图工具、没有图层面板、没有属性面板——想改，就改文件。
+Agent 原生的**只读设计画布**：agent 把设计写成静态 HTML 画框，`artifact push` 到云端，人在浏览器里看——
+平移缩放、并排比较、双击聚焦、全屏、悬停看尺寸。没有编辑器，改设计就改文件。
 
 ```
-<你的项目>/.artifact/artboards/<画板>/index.html   ← Agent 写这里
-<你的项目>/.artifact/layout.json                   ← 画板摆在哪、叫什么、多大
+<项目>/.artifact/  ──artifact push──▶  Cloudflare Worker + R2  ──▶  浏览器只读画布
 ```
-
-改完存盘，正在开着的画布自己换那一块，不刷新整页、不打断缩放。
-
-> 下一版（云端单画布、只读、无版本）的设计目标与需求清单见 [`ARCHITECTURE.md`](ARCHITECTURE.md)。
-
-## 仓库里的三种形态
-
-| 形态 | 位置 | 状态 |
-| --- | --- | --- |
-| 底座（本地画布） | `packages/canvas`，包名 `@tian-s-org/canvas` | 已完成；可作为包装进任意项目，`npx @tian-s-org/artifact-cli canvas --projects <目录>` |
-| 云端画布 | `apps/cloud` | 已完成：Worker + R2，`https://artifact.tianyw0.xyz`（见 `apps/cloud/README.md`） |
-| 技能安装 | `packages/artifact-cli`，包名 `@tian-s-org/artifact-cli` | 已完成：`npx @tian-s-org/artifact-cli skill install`（GitHub Packages，私有） |
-
-`packages/canvas-core` 是前后端无关的画布引擎（视口数学、手势判定、点阵网格、取景），本地版与云端版共用；
-`packages/schema` 是画布协议（`layout.json` 解析校验 + 新建骨架模板），本地服务端、云端 Worker、前端共用一份。
-原型技能（`skills/prototype`）将来引用 `canvas-core`，两边画布行为保持一份实现。
 
 ## 快速开始
 
 ```bash
-pnpm install
-
-pnpm dev          # http://127.0.0.1:4330，前端热更新；API 在 4331
-pnpm build        # 类型检查 + 打包
-pnpm start        # 生产：单进程，http://127.0.0.1:4330
+npm i -D @tian-s-org/canvas        # 或 npx @tian-s-org/canvas ...
+npx @tian-s-org/canvas login       # 浏览器里用 Google 授权，token 存在本机
+npx @tian-s-org/canvas push        # 推当前目录的 .artifact/
+npx @tian-s-org/canvas open        # 打开画布
 ```
 
-环境变量：`ARTIFACT_PORT`（默认 4330）、`ARTIFACT_API_PORT`（开发模式下 API 端口）、
-`ARTIFACT_PROJECTS`（项目根目录：仓库里默认 `<repo>/projects`，装成包后在别的项目里默认 `./.artifact`）。服务只绑 `127.0.0.1`。
+## 目录协议
 
-打开首页是项目列表；`/p/<项目 id>` 进画布；`?focus=<画板 id>&scale=<0.2–4>` 直接定位到某块画板。
-
-## 装技能、连云端
-
-底座与 CLI 发布在 GitHub Packages（私有），装一次就不必再 clone 仓库：
-
-```bash
-npm config set @tian-s-org:registry https://npm.pkg.github.com/
-npm config set //npm.pkg.github.com/:_authToken "<你的 GitHub token>"
-npm i -D @tian-s-org/artifact-cli
-
-npx @tian-s-org/artifact-cli skill install                            # 装进 ~/.claude/skills/artifact-canvas
-npx @tian-s-org/artifact-cli skill install --target all --force       # 同时装 Claude Code 与 omp
-npx @tian-s-org/artifact-cli canvas --projects ./designs              # 在任意项目里起画布
-```
-
-仓库里调试时仍可直接用路径（不需要发布）：`npx ./packages/artifact-cli canvas --repo . --projects ./designs`。
-云端：
-
-```bash
-pnpm cloud:push <项目 id…>                       # 把 ARTIFACT_PROJECTS 下的项目推到云端画布
-pnpm cloud:deploy                                # 重新部署 Worker（含重新打包 SPA）
-```
-
-云端入口是一条带密钥的链接：`https://artifact.tianyw0.xyz/?k=<SITE_KEY>`，打开一次之后靠 Cookie 记住一年。
-Agent 与脚本走 `Authorization: Bearer <SITE_KEY>`，不需要 Cookie。
-
-## 目录
+一个画布就是一个目录：
 
 ```
-artifact/
-├── apps/
-│   └── cloud/                  云端画布：Cloudflare Worker + R2 + 独立沙箱文件源（部署单元）
-│       ├── src/                worker / api / files / repo / versions / storage / auth
-│       ├── scripts/            push（推项目）、smoke（真浏览器冒烟）
-│       └── tests/              worker 直测（内存版 R2）
-└── packages/
-    ├── canvas/                 底座（@tian-s-org/canvas）：SPA + 本地服务
-    │   ├── src/                画布、聚焦层、项目状态、版本面板
-    │   ├── server/             node:http：SPA + /api + /events + /files，文件监听
-    │   ├── bin/                artifact-canvas：装成包后的启动入口
-    │   ├── scripts/            dev、new-board、version、zoom-probe
-    │   └── tests/{unit,e2e}    node --test；E2E 用 playwright 驱动 Chromium + WebKit
-    ├── canvas-core/src/        viewport / gestures / geometry，无 React 依赖
-    ├── schema/src/             canvas-schema.ts（协议与校验）、templates.ts（新建骨架，三边共用）
-    └── artifact-cli/           @tian-s-org/artifact-cli：装技能、起本地画布
-        └── skills/artifact-canvas/   SKILL.md + references/ + assets/ + scripts/
+.artifact/
+├── layout.json                 画框清单
+├── context.md                  可选：给 agent 读的背景
+├── artboards/<画框 id>/
+│   ├── index.html              设计本体（静态 HTML/CSS/SVG，无脚本）
+│   ├── style.css               可选：这块画框自己的样式
+│   └── shot.png                可选：这块画框自己的图片
+└── assets/                     可选：跨画框共享
+    ├── images/  fonts/  css/
 ```
 
-仓库里不带示例项目：画布读的是你项目下的 `.artifact/`（或用 `--projects` 指定的根）。
-完整的协议与最小画板模板见技能 `packages/artifact-cli/skills/artifact-canvas/`。
-
-## 文件协议
-
-每个项目一个目录，`layout.json` 说明这个项目有什么：
+`layout.json`：
 
 ```json
 {
   "protocol": 1,
-  "id": "brand",
-  "name": "Northstar 品牌",
+  "id": "skillbor",
+  "name": "skillbor 原型",
   "context": "context.md",
   "boards": [
     {
       "id": "board-001",
-      "name": "品牌核心",
+      "name": "技能库",
       "x": 0, "y": 0, "width": 1440, "height": 900,
       "file": "artboards/board-001/index.html",
       "order": 1
@@ -113,89 +52,71 @@ artifact/
 }
 ```
 
-- `id`、画板 `id`：小写字母、数字、连字符。画板 id 同时是 `artboards/` 下的目录名。
-- 协议只描述画框；设计规范/色板如果要做，就画成一块画板，不写进 `layout.json`。
-- `file` 必须是 `artboards/<画板 id>/index.html`；不能穿出项目目录。
-- 未知字段原样保留，协议往后加东西不会打坏旧客户端；解析失败时画布停在上一份好数据并给出提示。
-- 画板内容是纯 HTML/CSS/SVG，不依赖画布实现；画布只负责把文件放进 iframe。
+- 协议只描述画框：`protocol / id / name / context / boards[]`；
+- `boards[].file` 必须是 `artboards/<id>/index.html`；
+- 坐标原点左上，x 向右、y 向下，单位画布像素；画布无限大，多屏就多开画框。
 
-```
-<项目>/.artifact/
-├── layout.json
-├── context.md                  项目背景，给 Agent 看的
-├── artboards/board-001/index.html
-└── assets/{images,fonts,css}/  可选：跨画板共享的资源
-```
+## 画框 HTML
 
-## HTTP 接口
+- **无脚本**：iframe 是 `sandbox=""`，脚本不执行；
+- **不引外网**：CSP 只放行文件源与 `data:`；
+- 资源用相对路径：`../../assets/images/…`、`../../assets/fonts/…`、`../../assets/css/…`；
+- 矢量 SVG + 真文本 + 1px 边框，放大要清楚；
+- 尺寸以 `layout.json` 的 `width`/`height` 为准，HTML 铺满。
 
-```
-GET   /                                 项目列表（SPA）
-GET   /p/:pid                          画布（SPA）
-GET   /api/meta                         云端标识：cloud / gated / canWrite（前端据此选轮询还是 SSE）
-GET   /api/projects                     项目列表
-POST  /api/projects                     { id, name } 建骨架
-GET   /api/projects/:pid                layout.json + 每块画板的 mtime + filesBase
-POST  /api/projects/:pid/boards/:bid    { x, y } 原子写回画板位置
-POST  /api/projects/:pid/boards         { id, name, width?, height? } 新建画板
-GET   /api/projects/:pid/versions       版本列表
-POST  /api/projects/:pid/versions       { note } 保存当前状态
-POST  /api/projects/:pid/versions/:vid/restore   { boardId? } 整版恢复或只恢复一块画板
-GET   /files/:pid/*                     画板静态资源（本地；云端换成文件源的 /f/:pid/:token/*）
-GET   /events?project=:pid              SSE（只有本地有）
-```
+## 查看器
 
-写操作用 `POST` 不是 `PATCH`/`PUT`/`DELETE`：Cloudflare 在边缘就把这几个方法挡掉，云端前端与本地共用一份代码。
-云端多出 `/api/projects/:pid/{tree,file,files}` 三条给 Agent 直接读写文件，见 `apps/cloud/README.md`。
+拖空白平移、滚轮/触控板缩放、适应窗口、100%；双击聚焦、←/→ 切换、F 全屏、Esc 逐级退出；
+工具栏「尺寸」开关：悬停画框显示 `名字 · 宽 × 高`；深链 `?focus=<画框 id>&scale=<0.2–4>`。
+页面每 2.5 秒轮询一次，只换变化的那一块，不整页刷新。
 
-SSE 事件：`board:changed`（带 `boardId` 与 `mtime`）、`board:added`、`board:removed`、
-`canvas:changed`、`version:saved`、`project:error`。前端看到 `board:changed` 只给那一块 iframe 换 `?v=<mtime>`。
-
-## 版本
-
-内容寻址：`versions/index.json` 记版本清单，文件字节存在 `versions/blobs/<sha256 前 16>`，同内容只存一份。
-
-- 保存：画布工具栏「版本」面板，或 `pnpm versions save brand "配色定稿"`。
-- 恢复：整版恢复（画板 + `layout.json`），或只恢复某一块画板——另一块和 `layout.json` 都不碰。
-- 恢复前自动留一份「恢复前自动备份」（`auto`）。
-- 恢复时内容已经一致的文件不重写：mtime 不动，画布不会白白重载那块画板。
-
-## 安全边界
-
-Agent 产出的 HTML 按不可信处理，本地与云端同一套原则：
-
-- iframe `sandbox=""`（没有脚本、不透明源），父页面读不到画板内部，画板碰不到父页面。
-- 画板文档带 CSP：禁脚本、禁外部网络；图片/字体只允许文件源与本项目资源。
-- `/files` 只放行画板资源，`layout.json`、`context.md`、`versions/` 一律 403。
-- 本地服务只绑 `127.0.0.1`；云端画板另走独立域名 `artifact-files.tianyw0.xyz`，
-  路径里带项目 HMAC 令牌，那个源上没有页面也没有接口。细节见 `apps/cloud/README.md`。
-
-## 验证
+## 本地开发
 
 ```bash
-pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build && pnpm start
+pnpm install
+pnpm dev:worker        # wrangler dev（--var DEV:1，文件源走同源 /f/）
 ```
 
-- 单测（`tests/unit`）：协议校验、路径防护、仓库读写、文件监听去抖、版本存储。
-- E2E（`tests/e2e`）：真实浏览器 + 真实服务 + 临时项目目录——取景/平移/缩放锚定/聚焦/深链、
-  拖拽写回磁盘、隔离与安全（同名 class、脚本不执行、外网请求发不出、父页面读不到内部）、
-  画板资源（图片真画出来、字体与共享样式表能取到）、版本保存与恢复。
-- `pnpm probe:zoom`：Chromium / WebKit 下不同缩放实现的清晰度对比。
-- 云端：`pnpm --filter @tian-s-org/cloud test`（worker 直测）与 `pnpm --filter @tian-s-org/cloud smoke`
-  （真浏览器打开线上画布，查画板是否从文件源加载、沙箱是否生效、改文件是否自动换那一块）。
+本地不配 Google 时是「全放开」模式，不需要任何密钥；要测登录就在仓库根 `.dev.vars`（已 gitignore）写：
 
-## 云端
+```
+GOOGLE_CLIENT_ID=…
+GOOGLE_CLIENT_SECRET=…
+ALLOWED_EMAILS=you@example.com        # 或 ALLOWED_DOMAIN=example.com
+SESSION_SECRET=…                      # 可选；不写就用 client secret 签名
+```
 
-同一份前端、两个 Cloudflare 域名、一个 R2 桶：
+Google OAuth 的回调地址：线上 `https://artifact.tianyw0.xyz/auth/google/callback`，
+本地 `http://localhost:8787/auth/google/callback`。
 
-- 应用源 `artifact.tianyw0.xyz`：SPA + `/api`，`SITE_KEY` 门禁（`?k=` 换一年期 HttpOnly Cookie，脚本用 Bearer）。
-- 文件源 `artifact-files.tianyw0.xyz`：只发 `/f/<项目>/<令牌>/…`，这才是画板 iframe 的来源，跨源 + `sandbox=""`。
-- 存储：R2 里的 `projects/<pid>/…` 键与本地目录结构一一对应，版本仍是 `versions/index.json` + 内容寻址 blob。
-- 变更通知：前端每 2.5 秒轮询项目快照，diff 出与本地 SSE 相同的事件（Workers 没有长连接）。
+## 部署
 
-部署、密钥、接口与限制见 [`apps/cloud/README.md`](apps/cloud/README.md)。
+```bash
+wrangler secret put GOOGLE_CLIENT_ID
+wrangler secret put GOOGLE_CLIENT_SECRET
+wrangler secret put ALLOWED_EMAILS      # 或 ALLOWED_DOMAIN
+wrangler secret put SESSION_SECRET      # 可选
+pnpm deploy                             # vite build + wrangler deploy
+```
 
-## 和原型技能的关系
+一个部署一块画布；R2 键就是画布里的相对路径（`layout.json`、`artboards/…`、`assets/…`）。
 
-画布引擎（`packages/canvas-core`）由本仓库拥有，原型技能通过别名引用这一份实现。
-技能侧改造还没做（那边有未提交的改动，等它干净了再切）。
+## 仓库结构
+
+```
+artifact/
+├── src/          只读画布（React）：core 视口 / protocol / shell / store / api
+├── worker/       Cloudflare Worker：/api/state、/api/file(s)、/f/<令牌>/<路径>、Google 登录
+├── cli/          artifact login / logout / push / open / skill install
+├── skills/       artifact-canvas 技能（随包发布）
+├── tests/        unit · cli · worker
+└── index.html · vite.config.ts · wrangler.jsonc · tsconfig.json
+```
+
+## 安全
+
+1. 画框 iframe 永远 `sandbox=""`，不加 `allow-same-origin`；
+2. 画框 CSP：`script-src 'none'`、`connect-src 'none'`，只放行文件源与 `data:`；
+3. 文件源只发 `artboards/`、`assets/`；`layout.json`、`context.md` 一律 403；
+4. 页面与写接口都要 Google 会话；CLI 用 `artifact login` 换的 token；
+5. 密钥只放 `.dev.vars`（gitignore）或 `wrangler secret`，不进代码、文档、提交。

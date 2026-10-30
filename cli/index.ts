@@ -2,13 +2,16 @@
 /**
  * artifact CLI
  *
- *   artifact push [目录] [--url <地址>] [--key <密钥>]
+ *   artifact login [--url <地址>]        浏览器授权，token 存本机
+ *   artifact logout
+ *   artifact push [目录] [--url <地址>]
  *   artifact open [--url <地址>]
- *   artifact skill install [--target claude|omp|project|all] [--dir <技能库根>] [--force]
- *   artifact skill list
+ *   artifact skill install / list
  */
 import { spawn } from 'node:child_process'
+import { clearCredentials, readCredentials } from './credentials'
 import { cliVersion, installSkill, installedInfo, SKILL_NAME } from './install'
+import { login } from './login'
 import { push } from './push'
 import { customTarget, resolveTargets, skillTargets } from './targets'
 
@@ -17,7 +20,11 @@ const DEFAULT_URL = process.env.ARTIFACT_URL ?? 'https://artifact.tianyw0.xyz'
 const USAGE = `artifact —— 画布命令行
 
 用法：
-  artifact push [目录] [--url <地址>] [--key <密钥>]
+  artifact login [--url <地址>]
+      打开浏览器授权（Google 登录），token 存到 ~/.config/artifact/credentials.json
+  artifact logout
+      删掉本机 token
+  artifact push [目录] [--url <地址>]
       把本地 .artifact/ 整包推到云端（默认当前目录的 .artifact）
   artifact open [--url <地址>]
       在浏览器里打开画布
@@ -28,12 +35,12 @@ const USAGE = `artifact —— 画布命令行
 
 环境变量：
   ARTIFACT_URL   画布地址（默认 ${DEFAULT_URL}）
-  ARTIFACT_KEY   访问密钥；push 需要它
+  ARTIFACT_KEY   CLI token；不设就用 artifact login 存下来的
 
 示例：
+  npx @tian-s-org/canvas login
   npx @tian-s-org/canvas push
-  npx @tian-s-org/canvas open
-  npx @tian-s-org/canvas skill install --target all`
+  npx @tian-s-org/canvas open`
 
 interface Parsed {
   command: string[]
@@ -114,15 +121,24 @@ export async function main(argv: string[]): Promise<void> {
 
     const parsed = parse(argv)
     const [group, action] = parsed.command
+    const creds = await readCredentials()
+    const url = stringFlag(parsed, 'url') ?? process.env.ARTIFACT_URL ?? creds?.url ?? DEFAULT_URL
 
-    if (group === 'push') {
-      const key = stringFlag(parsed, 'key') ?? process.env.ARTIFACT_KEY ?? ''
-      if (key === '') throw new Error('缺少密钥：设 ARTIFACT_KEY，或加 --key')
-      const url = stringFlag(parsed, 'url') ?? DEFAULT_URL
-      await push({ dir: action, url, key })
-      process.exitCode = 0
+    if (group === 'login') {
+      await login({ url })
+    } else if (group === 'logout') {
+      await clearCredentials()
+      console.log('已删除本机 token')
+    } else if (group === 'push') {
+      const key = stringFlag(parsed, 'key') ?? process.env.ARTIFACT_KEY ?? creds?.token
+      try {
+        await push({ dir: action, url, key })
+      } catch (err) {
+        if (!key) throw new Error(`${(err as Error).message}（还没登录？先跑 artifact login）`)
+        throw err
+      }
     } else if (group === 'open') {
-      openUrl(stringFlag(parsed, 'url') ?? DEFAULT_URL)
+      openUrl(url)
     } else if (group === 'skill' && action === 'install') {
       process.exitCode = await skillInstall(parsed)
     } else if (group === 'skill' && (action === 'list' || action === undefined)) {

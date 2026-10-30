@@ -132,9 +132,9 @@ artifact skill install    # 装技能
 
 **Web 用 Google 登录**：
 
-- OAuth 2.0（PKCE），回调后种一枚签名 HttpOnly Cookie 作为会话；
-- 只允许白名单邮箱 / 域名登录（部署时配置），其他人看到 403；
-- 页面只读，登录态只用来确认「谁能看」「谁能授权」。
+- OAuth 2.0（授权码），回调 `/auth/google/callback` 后种一枚签名 HttpOnly Cookie 作为会话（30 天）；
+- 只允许白名单邮箱 / 域名登录（`ALLOWED_EMAILS` / `ALLOWED_DOMAIN`），其他人看到 403；
+- **不再使用 SITE_KEY**：没配 Google 时是本地开发模式（全放开）；配了就必须登录。
 
 **本地 skill 由 Web 授权**：
 
@@ -146,16 +146,15 @@ artifact login
   └─ CLI 用 code 换长期 token，存 ~/.config/artifact/credentials.json（0600）
 ```
 
-- token 在服务端只存哈希（R2 对象 `auth/tokens/<hash>.json`：创建时间、名称、最后使用时间）；
-- `artifact push` / `open` 用 `Authorization: Bearer <token>`；
-- Web 上可以列出、撤销这些 token（「本地授权」页面）。
+- 一次性 code 存 R2 `auth/codes/<code>`（10 分钟、用后即焚），换来的 token 存哈希 `auth/tokens/<sha256>`；
+- `artifact push` 用 `Authorization: Bearer <token>`；
+- 会话与文件令牌都用 `SESSION_SECRET`（不设则复用 Google client secret）签名——本地开发不需要任何额外密钥。
 
 **待定**：
 
-1. `SITE_KEY` 门禁退役，还是退化成「分享链接」的一次性 token？
+1. Web 上的「本地授权」列表与撤销（token 已有存储，界面还没做）。
 2. 单画布的归属：一个部署只有一个 owner，还是多人可写？
-3. token 有效期（永久 / 90 天滚动）与撤销粒度（按设备）。
-4. 白名单按邮箱还是按 Google Workspace 域名。
+3. token 有效期（当前长期有效）与撤销粒度（按设备）。
 
 ## 5. push 的语义
 
@@ -195,15 +194,16 @@ artifact login
 ## 8. 待定
 
 1. ~~写入主路径~~ 已定：**本地目录 + push**；单文件改动也可走 HTTP 接口。
-2. `SITE_KEY` 与文件令牌的轮换方式。
+2. ~~`SITE_KEY` 与文件令牌的轮换~~ 已定：去掉 SITE_KEY，文件令牌用会话密钥派生。
 3. push 的冲突策略：整包覆盖 / 增量对比 / 先拉再推。
 4. 现有线上的三个项目如何并成一个画布（或清空重来）。
 
 ## 9. 实施阶段
 
-1. **仓库收拢**：根目录即包，删 `pnpm-workspace.yaml` / `packages/` / `apps/`；协议、引擎、CLI、技能并进来。
-2. **删本地服务**：`server/` 整块移除，CLI 改成 `push` / `open` / `skill install`。
-3. **单画布 Worker + 只读 SPA**：去掉 pid / Hub / 版本 / 拖拽，接口收成 `/api/state`、`/api/file(s)`、`/f/<hmac>/<rel>`。
-4. **迁移**：线上三份项目并成一份画布；技能与文档同步。
+1. ✅ **仓库收拢**：根目录即包，删 `pnpm-workspace.yaml` / `packages/` / `apps/`。
+2. ✅ **删本地服务**：`server/` 整块移除，CLI 改成 `push` / `open` / `skill install`。
+3. ✅ **单画布 Worker + 只读 SPA**：接口收成 `/api/state`、`/api/file(s)`、`/f/<令牌>/<rel>`。
+4. ✅ **Google 登录 + CLI 授权**：`/auth/google`、`/cli/authorize`、`/api/cli/token`；`artifact login`。
+5. ⏳ **迁移**：线上 R2 仍是旧结构 `<项目>/…`，需要重新 push 一份 `.artifact`（或写搬运脚本）。
 
-每步都跑 `typecheck + 单测 + worker 测试 + 浏览器 E2E`，绿了再进下一步。
+验证：`pnpm typecheck && pnpm test && pnpm build`；测试收敛为核心单测（协议、deep-link、CLI 安装、Worker API/鉴权/路径）。

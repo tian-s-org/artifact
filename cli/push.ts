@@ -16,7 +16,8 @@ export interface PushOptions {
   /** 本地画布目录；默认当前目录的 .artifact */
   dir?: string
   url: string
-  key: string
+  /** CLI token；本地开发模式可以不传 */
+  key?: string
 }
 
 interface PushFile {
@@ -74,7 +75,10 @@ export async function push(options: PushOptions): Promise<number> {
   try {
     res = await fetch(`${options.url.replace(/\/$/, '')}/api/files`, {
       method: 'POST',
-      headers: { authorization: `Bearer ${options.key}`, 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        ...(options.key ? { authorization: `Bearer ${options.key}` } : {}),
+      },
       body: JSON.stringify({ files }),
     })
   } catch (err) {

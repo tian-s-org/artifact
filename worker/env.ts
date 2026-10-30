@@ -1,17 +1,22 @@
 /** Worker 绑定与环境变量。secrets 用 `wrangler secret put` 写，不进仓库。 */
 export interface Env {
-  /** R2：项目文件（layout.json、画板 HTML、资源、版本 blob） */
+  /** R2：layout.json、画板 HTML、资源、CLI token */
   FILES: Bucket
   /** 前端静态资源 */
   ASSETS: { fetch(input: Request | string, init?: RequestInit): Promise<Response> }
-  /** 站点访问密钥；设了就要带 ?k= 或 cookie 才能看。本机 dev 不设也行 */
-  SITE_KEY?: string
-  /** 画板文件签名的密钥；不设就退到 SITE_KEY */
-  FILES_SECRET?: string
   /** 应用域名（artifact.tianyw0.xyz） */
   APP_HOST: string
   /** 画板文件域名（artifact-files.tianyw0.xyz） */
   FILES_HOST: string
+  /** Google OAuth；不配就是本地开发模式（全放开） */
+  GOOGLE_CLIENT_ID?: string
+  GOOGLE_CLIENT_SECRET?: string
+  /** 会话签名与文件令牌的密钥；不设就复用 GOOGLE_CLIENT_SECRET */
+  SESSION_SECRET?: string
+  /** 允许登录的邮箱，逗号分隔 */
+  ALLOWED_EMAILS?: string
+  /** 允许登录的域名（比如 tian-s.org） */
+  ALLOWED_DOMAIN?: string
   /** `wrangler dev` 时设为 1：文件源退回同源 /f/，不用真的第二域名 */
   DEV?: string
 }

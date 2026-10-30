@@ -1,14 +1,26 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { handleApi, type ApiContext } from '../../worker/api'
-import { filesToken, verifyFilesToken, type Access } from '../../worker/auth'
+import {
+  checkAccess,
+  consumeCliCode,
+  createCliCode,
+  createCliToken,
+  filesToken,
+  readSession,
+  sessionCookie,
+  signSession,
+  verifyCliToken,
+  verifyFilesToken,
+  type Access,
+} from '../../worker/auth'
 import { handleFile } from '../../worker/files'
 import { isServableFile, isWritableFile } from '../../worker/paths'
 import { R2Storage } from '../../worker/storage'
 import { MemoryBucket, makeEnv } from './fake'
 
-const WRITE: Access = { allowed: true, keyFromUrl: null, canWrite: true }
-const READONLY: Access = { allowed: true, keyFromUrl: null, canWrite: false }
+const WRITE: Access = { allowed: true, canWrite: true, email: null }
+const READONLY: Access = { allowed: true, canWrite: false, email: null }
 
 function ctxFor(bucket: MemoryBucket): ApiContext {
   return { storage: new R2Storage(bucket) }
@@ -45,7 +57,7 @@ test('路径白名单：/f 只发 artboards/ 与 assets/，写入只认白名单
 })
 
 test('文件令牌：同一个部署稳定，改一个字符就不过', async () => {
-  const env = makeEnv(new MemoryBucket(), { FILES_SECRET: 'secret' })
+  const env = makeEnv(new MemoryBucket(), { SESSION_SECRET: 'secret' })
   const token = await filesToken(env)
   assert.equal(await verifyFilesToken(token, env), true)
   assert.equal(await verifyFilesToken(`${token.slice(0, 31)}x`, env), false)
@@ -116,7 +128,7 @@ test('写接口要写权限；路径不合法直接 400', async () => {
 
 test('文件源：令牌不对 403；画板带沙箱 CSP，layout.json 取不到', async () => {
   const bucket = new MemoryBucket()
-  const env = makeEnv(bucket, { FILES_SECRET: 'secret' })
+  const env = makeEnv(bucket, { SESSION_SECRET: 'secret' })
   await callApi(bucket, '/api/files', {
     method: 'POST',
     body: JSON.stringify({
@@ -154,4 +166,56 @@ test('文件源：令牌不对 403；画板带沙箱 CSP，layout.json 取不到
     storage,
   )
   assert.equal(meta.status, 403)
+})
+
+test('Google 会话：签名、过期、白名单', async () => {
+  const env = makeEnv(new MemoryBucket(), {
+    GOOGLE_CLIENT_ID: 'id',
+    GOOGLE_CLIENT_SECRET: 'secret',
+    ALLOWED_EMAILS: 'me@example.com',
+    ALLOWED_DOMAIN: 'tian-s.org',
+  })
+  const cookie = await sessionCookie({ email: 'me@example.com', exp: Date.now() + 1000 }, env)
+  const request = new Request('https://artifact.test/', { headers: { cookie: cookie.split(';')[0] ?? '' } })
+  const session = await readSession(request, env)
+  assert.equal(session?.email, 'me@example.com')
+
+  const expired = await signSession({ email: 'me@example.com', exp: Date.now() - 1 }, env)
+  const expiredReq = new Request('https://artifact.test/', { headers: { cookie: `artifact_session=${expired}` } })
+  assert.equal(await readSession(expiredReq, env), null)
+
+  const tampered = new Request('https://artifact.test/', { headers: { cookie: `artifact_session=${expired}x` } })
+  assert.equal(await readSession(tampered, env), null)
+})
+
+test('访问判定：没配 Google 全放开；配了就要会话或 CLI token', async () => {
+  const bucket = new MemoryBucket()
+  const openEnv = makeEnv(bucket)
+  assert.equal((await checkAccess(new Request('https://artifact.test/'), openEnv, new R2Storage(bucket))).allowed, true)
+
+  const env = makeEnv(bucket, { GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret' })
+  const storage = new R2Storage(bucket)
+  assert.equal((await checkAccess(new Request('https://artifact.test/'), env, storage)).allowed, false)
+
+  const cookie = await sessionCookie({ email: 'me@example.com', exp: Date.now() + 1000 }, env)
+  const withSession = new Request('https://artifact.test/', { headers: { cookie: cookie.split(';')[0] ?? '' } })
+  assert.equal((await checkAccess(withSession, env, storage)).allowed, true)
+
+  const token = await createCliToken(storage, 'cli')
+  const withToken = new Request('https://artifact.test/', { headers: { authorization: `Bearer ${token}` } })
+  const access = await checkAccess(withToken, env, storage)
+  assert.equal(access.allowed, true)
+  assert.equal(access.canWrite, true)
+})
+
+test('CLI 授权：一次性 code 只能换一次，token 可校验', async () => {
+  const bucket = new MemoryBucket()
+  const storage = new R2Storage(bucket)
+  const code = await createCliCode(storage, 'http://127.0.0.1:1234/callback')
+  assert.equal((await consumeCliCode(storage, code))?.redirect, 'http://127.0.0.1:1234/callback')
+  assert.equal(await consumeCliCode(storage, code), null, 'code 用完即焚')
+
+  const token = await createCliToken(storage, 'me@example.com')
+  assert.equal(await verifyCliToken(storage, token), true)
+  assert.equal(await verifyCliToken(storage, 'f'.repeat(48)), false)
 })

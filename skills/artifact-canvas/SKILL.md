@@ -14,7 +14,7 @@ description: 把品牌、界面、架构图等设计落成静态 HTML 画框，�
 
 - [ ] 装了吗：`npx --no-install @tian-s-org/canvas --version`
 - [ ] 登录了吗：`npx @tian-s-org/canvas login`（首次会打开浏览器，用户用 Google 授权）
-- [ ] 建画布目录：没有 `<项目>/.artifact/` 就照 `assets/canvas.json`、`assets/board.html` 抄
+- [ ] 建画布目录：没有 `<项目>/.artifact/` 就照 `assets/canvas.json`、`assets/board.html`、`assets/AGENTS.md` 抄
 - [ ] 写完 push：`npx @tian-s-org/canvas push <项目>/.artifact`（第一次会自动建画布并打印链接）
 - [ ] 打开看：`npx @tian-s-org/canvas open --canvas <id>`
 
@@ -24,6 +24,7 @@ description: 把品牌、界面、架构图等设计落成静态 HTML 画框，�
 <项目>/.artifact/
 ├── layout.json                 画框清单（唯一入口）
 ├── context.md                  可选：给 agent 读的背景
+├── AGENTS.md                   写作规范（从 assets/AGENTS.md 拷，只留本地）
 ├── artboards/<画框 id>/
 │   ├── index.html              必需：设计本体（静态 HTML/CSS/SVG，无脚本）
 │   ├── style.css               可选：这块画框自己的样式
@@ -41,7 +42,9 @@ description: 把品牌、界面、架构图等设计落成静态 HTML 画框，�
 ## 建画布 / 新建画框
 
 - `assets/canvas.json`：最小 `layout.json`，改 `id`、`name`，`boards` 可留空；
-- `assets/board.html`：画框骨架（满屏、CSS 变量、无脚本），复制到 `artboards/<id>/index.html` 再改。
+- `assets/board.html`：画框骨架（满屏、CSS 变量、无脚本），复制到 `artboards/<id>/index.html` 再改；
+- `assets/AGENTS.md`：写作规范（标签格式、序号、尺寸、摆位），**复制成 `<项目>/.artifact/AGENTS.md`**，
+  供之后在这个目录里干活的 agent 读；它只留在本地，push 不会上传。
 
 新建画框就是往 `boards` 里加一项、再建对应文件：
 

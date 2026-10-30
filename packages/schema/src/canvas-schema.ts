@@ -10,7 +10,7 @@ export const PROTOCOL_VERSION = 1
 /** 画板 id 与项目 id 同一规则，同时也是文件系统里的目录名 */
 const ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/
 
-/** 画板文件必须落在 artboards/ 下、以 .html 结尾，且不能穿出项目目录 */
+/** 画板文件必须落在 artboards/<画板 id>/ 下、以 index.html 结尾，且不能穿出画布目录 */
 const BOARD_FILE_RE = /^artboards\/[a-z0-9][a-z0-9-]{0,63}\/index\.html$/
 
 export interface BoardSpec {

@@ -172,6 +172,13 @@ export default {
 
       const access = await checkAccess(request, env, storage)
 
+      // 画布不是「链接即看」：页面和它的接口都要登录（会话或 CLI token），链接只决定看哪一块
+      if (!access.allowed && (url.pathname.startsWith('/c/') || url.pathname.startsWith('/api/c/'))) {
+        if (url.pathname.startsWith('/api/')) return fail(401, 'unauthorized', '需要登录')
+        if (!googleEnabled(env)) return blockedPage(null)
+        return redirect(`/auth/google?redirect=${encodeURIComponent(url.pathname + url.search)}`)
+      }
+
       if (url.pathname === '/api/me') {
         if (access.email === null) return fail(401, 'unauthorized', '未登录')
         return json(200, {

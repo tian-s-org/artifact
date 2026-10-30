@@ -100,7 +100,7 @@ pnpm deploy                             # vite build + wrangler deploy
 ```
 
 一块画布一个随机 id；R2 键是 `canvas/<id>/…`（`layout.json`、`artboards/…`、`assets/…`）。
-一个人可以有多块：`artifact list` 列出自己的，`/c/<id>` 是只读分享链接。
+一个人可以有多块：`artifact list` 列出自己的，`/c/<id>` 是分享链接——打开要登录（白名单账号），链接只决定看哪一块。
 
 ## 仓库结构
 

@@ -73,7 +73,7 @@ export function CanvasList() {
       <div className="mx-auto w-[min(880px,100%)]">
         <header className="mb-24 flex items-baseline gap-12">
           <h1 className="m-0 text-[20px] font-semibold">个人中心</h1>
-          <span className="text-[12px] text-ink-3">每块画布一个随机链接，拿到链接只能看</span>
+          <span className="text-[12px] text-ink-3">每块画布一个链接；打开要登录，链接只决定看哪一块</span>
           <div className="ml-auto flex items-center gap-10">
             {me ? (
               <>

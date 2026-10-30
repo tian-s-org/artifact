@@ -1,7 +1,7 @@
 /**
  * /files/:projectId/* —— 画板 iframe 唯一的资源入口。
  *
- * 只放行 artboards/、assets/、design-system/ 三个目录和白名单扩展名；
+ * 只放行 artboards/、assets/ 两个目录和白名单扩展名；
  * layout.json、context.md、versions/ 一律 403，让画板内的代码看不到画布元数据。
  * 画板 iframe 是 sandbox=""（不透明源），所以字体/图片需要 ACAO: *。
  */

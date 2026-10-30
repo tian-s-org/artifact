@@ -40,7 +40,7 @@ function hasBadSegments(rel: string): boolean {
 }
 
 /** /f 能发的文件：三个白名单目录 + 白名单扩展名。layout.json、context.md、versions/ 一律不发 */
-const SERVABLE_PREFIXES = ['artboards/', 'assets/', 'design-system/'] as const
+const SERVABLE_PREFIXES = ['artboards/', 'assets/'] as const
 
 export function isServableFile(rel: string): boolean {
   if (hasBadSegments(rel)) return false
@@ -50,7 +50,7 @@ export function isServableFile(rel: string): boolean {
 
 /** Agent 能写的文件：白名单目录 + layout.json / context.md；versions/ 归服务端管，不许手写 */
 const WRITABLE_FIXED = new Set(['layout.json', 'context.md'])
-const WRITABLE_PREFIXES = ['artboards/', 'assets/', 'design-system/'] as const
+const WRITABLE_PREFIXES = ['artboards/', 'assets/'] as const
 
 export function isWritableFile(rel: string): boolean {
   if (hasBadSegments(rel)) return false

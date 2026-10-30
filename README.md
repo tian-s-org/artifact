@@ -124,8 +124,7 @@ artifact/
 ├── layout.json
 ├── context.md                  项目背景，给 Agent 看的
 ├── artboards/board-001/index.html
-├── assets/{fonts,images}/
-└── design-system/              可选：共享 CSS 等普通文件（协议不引用它）
+└── assets/{images,fonts,css}/  可选：跨画板共享的资源
 ```
 
 ## HTTP 接口

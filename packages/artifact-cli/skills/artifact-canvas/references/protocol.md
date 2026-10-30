@@ -6,12 +6,11 @@
 <项目>/.artifact/             一个目录就是一个画布
 ├── layout.json               画布元数据（唯一入口）
 ├── context.md                项目背景，给 agent 读
-├── assets/{fonts,images}/    画板引用的本地资源
-├── design-system/            可选：共享 CSS 等普通文件，协议不引用它
-└── artboards/<画板 id>/index.html
+├── artboards/<画板 id>/index.html   设计本体（可选同目录 CSS/图片）
+└── assets/{images,fonts,css}/       可选：跨画板共享的资源
 ```
 
-`design-system/` 只是普通目录：想给画板共享样式就放 CSS，画板用相对路径引用。
+共享样式放 `assets/css/`，画板用 `../../assets/css/base.css` 引用。
 如果用户要「设计规范」，把它**画成一块画板**，不要写进 `layout.json`。
 
 ## layout.json
@@ -48,8 +47,8 @@
 
 - 纯 HTML / CSS / SVG，**无脚本**（`sandbox=""`），不引用外网（CSP 只放行文件源与 `data:`）。
 - 只读展示；`pointer-events` 在 iframe 上被关掉，交互交给画布本身。
-- 引用资源用相对路径：`../../assets/images/logo.svg`、`../../assets/fonts/x.woff2`、`../../design-system/…`。
-- 画板之间完全隔离：每块在独立 iframe 里，同名 class 互不影响——公共样式要在每块画板里各写一份，或引用 `design-system/` 下的共享 CSS。
+- 引用资源用相对路径：`../../assets/images/logo.svg`、`../../assets/fonts/x.woff2`、`../../assets/css/base.css`。
+- 画板之间完全隔离：每块在独立 iframe 里，同名 class 互不影响——公共样式要在每块画板里各写一份，或引用 `assets/css/` 下的共享 CSS。
 
 ## 云端
 

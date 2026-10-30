@@ -30,13 +30,14 @@ async function callApi(
   return handleApi(request, new URL(request.url), env, ctxFor(bucket), access)
 }
 
-test('路径白名单：/f 只发三个目录，写入也拦住 versions 与点文件', () => {
+test('路径白名单：/f 只发 artboards/ 与 assets/，写入也拦住 versions 与点文件', () => {
   assert.equal(isServableFile('artboards/board-001/index.html'), true)
   assert.equal(isServableFile('assets/images/a.png'), true)
-  assert.equal(isServableFile('design-system/rules.css'), true)
+  assert.equal(isServableFile('assets/css/base.css'), true)
 
   assert.equal(isServableFile('layout.json'), false)
   assert.equal(isServableFile('context.md'), false)
+  assert.equal(isServableFile('design-system/rules.css'), false)
   assert.equal(isServableFile('versions/index.json'), false)
   assert.equal(isServableFile('artboards/.secret'), false)
   assert.equal(isServableFile('artboards/../layout.json'), false)

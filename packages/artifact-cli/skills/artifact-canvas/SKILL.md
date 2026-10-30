@@ -26,8 +26,8 @@ description: 把品牌、界面、架构图等设计落成静态 HTML 画板，�
 <项目>/.artifact/assets/                      画板引用的图片、字体
 ```
 
-`.artifact/` 自己就是画布，**不要套项目名，也没有多项目**。`design-system/` 不是协议的一部分：
-要给画板共享样式就放 CSS；用户要「设计规范」就画成一块画板。
+`.artifact/` 自己就是画布，**不要套项目名，也没有多项目**。
+跨画板共享的样式/图片放 `assets/`（CSS 放 `assets/css/`）；用户要「设计规范」就画成一块画板。
 
 ## 装底座（先探，别重复装）
 
@@ -104,7 +104,7 @@ open http://127.0.0.1:4330                    # 项目列表；/p/<项目 id> �
 
 - **没有 JavaScript**：iframe 是 `sandbox=""`，脚本不会执行。交互态只用 CSS（`:hover`、`@media`、`details` 等）。
 - **不引用外网**：画板文档的 CSP 只允许本机地址与 `data:`，CDN 字体、外链图片都会被拦。
-- 资源用相对路径：`../../assets/images/…`、`../../assets/fonts/…`、`../../design-system/…`。
+- 资源用相对路径：`../../assets/images/…`、`../../assets/fonts/…`、`../../assets/css/…`。
 - 放大要清楚：矢量 SVG、真文本、1px 边框；不用位图截图，不把整页包在 `transform: scale()` 里。
 - 尺寸以 `layout.json` 的 `width`/`height` 为准，HTML 铺满（`body { margin:0; height:100vh }`）。
 

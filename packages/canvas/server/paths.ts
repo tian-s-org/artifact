@@ -34,7 +34,7 @@ function isInside(parent: string, child: string): boolean {
 }
 
 /** 对外可以发的顶层目录。layout.json / context.md / versions / 任何其它文件一律不发。 */
-const SERVABLE_PREFIXES = ['artboards/', 'assets/', 'design-system/'] as const
+const SERVABLE_PREFIXES = ['artboards/', 'assets/'] as const
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',

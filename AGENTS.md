@@ -19,7 +19,7 @@ Agent 原生的无限设计画布。**画布是只读的**：没有编辑按钮�
 ## 动手前先读
 
 1. `<项目>/.artifact/context.md`——项目背景、目标用户、约束。
-2. 已有的「规范 / 色板」画板——颜色、字号、间距；新画板按它来（`design-system/` 只是可选的共享 CSS 目录，协议不引用它）。
+2. 已有的「规范 / 色板」画板——颜色、字号、间距；新画板按它来（共享 CSS 放 `assets/css/`）。
 3. 已有的画板：照着现有风格、尺寸和排版节奏做，别另起一套。
 
 ## 常用命令
@@ -62,7 +62,7 @@ pnpm --filter @tian-s-org/cloud smoke    # 真浏览器冒烟线上画布
 - **没有 JavaScript**。iframe 是 `sandbox=""`，脚本不会执行；交互态请用 CSS（`:hover`、`@media`、`details` 等）。
 - 不引用外网资源。画板文档的 CSP 只允许本地服务与 `data:`；外链图片、CDN 字体会被拦掉。
 - 资源用相对路径：`../../assets/images/xxx.png`、`../../assets/fonts/xxx.woff2`、
-  `../../design-system/…`（`design-system/` 下的文件也能被画板当 CSS 引用，示例项目没这么做，各自把令牌写在画板里）。
+  `../../assets/css/…`（共享样式放 `assets/css/`；画板之间同名 class 不会串，各自也可以写自己的样式）。
 - 不访问父页面、不发请求——沙箱与 CSP 都会拒绝，别在这上面浪费时间。
 
 ## 摆位与布局

@@ -12,9 +12,9 @@ Agent 把设计写成静态 HTML 画板，`push` 到云端；浏览器打开一�
 ```
 一个画布 = 一个目录
 ├── layout.json                 画框清单（位置、尺寸、名字、文件）
-├── artboards/<id>/index.html   设计本体（静态 HTML，无脚本）
-├── assets/{images,fonts}/
-└── design-system/              可选：共享 CSS 等普通文件（协议不引用它）
+├── context.md                  可选：给 agent 读的背景
+├── artboards/<id>/index.html   设计本体（静态 HTML，无脚本；可带自己的 CSS/图片）
+└── assets/{images,fonts,css}/  可选：跨画板共享的资源
 ```
 
 - **一个部署 = 一个画布**：没有项目列表、没有 `pid`、没有版本。
@@ -78,7 +78,7 @@ agent ──artifact push──▶ /api/file(s) ──▶ R2        │
 
 1. 画板 iframe 永远 `sandbox=""`，**永不加** `allow-same-origin`。
 2. 画板 CSP：`script-src 'none'`、`connect-src 'none'`，只放行文件源与 `data:`。
-3. `/files` 只发 `artboards/`、`assets/`、`design-system/`；`layout.json`、`context.md` 一律 403。
+3. `/files` 只发 `artboards/`、`assets/`；`layout.json`、`context.md` 一律 403。
 4. 写接口需要 Bearer；app 页面需要 `SITE_KEY` 门禁。
 5. 密钥只放 `.dev.vars`（gitignore）或 `wrangler secret`，不进代码、文档、提交。
 
@@ -98,7 +98,7 @@ artifact skill install    # 装技能
 - **不做构建**：没有打包、没有转译、没有内联。文件源支持多文件，所以不需要像 Claude Artifact 那样把一切塞进一个 HTML。
 - **画板不是 React**：画板运行在 `sandbox=""` 里，脚本不执行；React 只存在于画布壳。
 - **画布壳才用 React**：Vite 构建成静态产物，由维护者 `wrangler deploy` 到 Cloudflare Assets——这不是 agent 的 push。
-- **组件化的正确姿势**：共享 CSS 放 `design-system/`，画板用相对路径引用，而不是引入 JS 框架。
+- **组件化的正确姿势**：共享 CSS 放 `assets/css/`，画板用相对路径引用，而不是引入 JS 框架。
 
 ## 6. 参考 Claude Artifact：抄什么、不抄什么
 

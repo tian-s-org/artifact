@@ -24,7 +24,7 @@ Agent 产出的 HTML 按不可信内容处理，四道门都得过：
 2. **独立源**——画板不在应用源上，同源读 Cookie / `parent.document` 无从谈起；文件源上没有 HTML 页面，也没有接口。
 3. **路径里的项目令牌**——`HMAC-SHA256(FILES_SECRET, "artifact-files:<项目 id>")` 前 32 位十六进制。
    放在路径里是为了让画板的相对资源（`../../assets/…`）自动带上它；令牌错了 403。
-4. **白名单 + CSP**——文件源只放行 `artboards/`、`assets/`、`design-system/` 下的静态资源；
+4. **白名单 + CSP**——文件源只放行 `artboards/`、`assets/` 下的静态资源；
    画板文档回 `default-src 'none'; img-src <文件源> data: blob:; font-src …; style-src 'unsafe-inline' …;
    script-src 'none'; connect-src 'none'; form-action 'none'; base-uri 'none'; sandbox`，外加 `nosniff`。
 

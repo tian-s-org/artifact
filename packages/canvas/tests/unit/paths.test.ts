@@ -5,13 +5,13 @@ import path from 'node:path'
 import test from 'node:test'
 import { isServableFile, mimeFor, projectDir, projectsRoot, resolveInside, singleProjectId } from '../../server/paths'
 
-test('只放行三个顶层目录和白名单扩展名', () => {
+test('只放行 artboards/ 与 assets/ 两个顶层目录和白名单扩展名', () => {
   const allowed = [
     'artboards/board-001/index.html',
     'artboards/board-001/style.css',
     'assets/images/hero.png',
     'assets/fonts/inter.woff2',
-    'design-system/tokens.json',
+    'assets/css/base.css',
   ]
   for (const rel of allowed) assert.equal(isServableFile(rel), true, rel)
 
@@ -19,7 +19,7 @@ test('只放行三个顶层目录和白名单扩展名', () => {
     'layout.json',
     'context.md',
     'versions/index.json',
-    'design-system/guidelines.md',
+    'design-system/tokens.json',
     'artboards/board-001/.secret.html',
     'artboards/board-001/app.js',
     'artboards/../../layout.json',

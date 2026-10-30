@@ -4,7 +4,7 @@
  * 画板是 sandbox=""（不透明源），CSP 只放行本机地址，所以这里有三个容易回归的点：
  * 1. assets/ 下的图片能在 iframe 里画出像素（不是 0×0 的破图）；
  * 2. assets/ 下的字体文件带 ACAO: *（不透明源的字体请求必须走 CORS）；
- * 3. design-system/ 下的样式表能被画板引用并生效。
+ * 3. assets/css/ 下的共享样式表能被画板引用并生效。
  */
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -20,7 +20,7 @@ const PNG_1PX = Buffer.from(
 
 const BOARD_HTML = `<!doctype html>
 <html lang="zh-Hans"><head><meta charset="utf-8"><title>资源自测</title>
-<link rel="stylesheet" href="../../design-system/rules.css">
+<link rel="stylesheet" href="../../assets/css/rules.css">
 <style>
   @font-face { font-family: 'DemoFont'; src: url('../../assets/fonts/demo.woff2') format('woff2'); }
   body { margin: 0; height: 100vh; display: grid; place-items: center; gap: 12px;
@@ -54,7 +54,9 @@ function writeAssets(root: string): void {
   fs.writeFileSync(path.join(images, 'dot.png'), PNG_1PX)
   // 不是真的 woff2：这里验的是「能不能取到、CSP 放不放行、有没有 CORS 头」
   fs.writeFileSync(path.join(fonts, 'demo.woff2'), Buffer.from('wOF2 fake font payload'))
-  fs.writeFileSync(path.join(projectDir(root), 'design-system', 'rules.css'), '.accent { color: rgb(12, 34, 56); }\n')
+  const cssDir = path.join(projectDir(root), 'assets', 'css')
+  fs.mkdirSync(cssDir, { recursive: true })
+  fs.writeFileSync(path.join(cssDir, 'rules.css'), '.accent { color: rgb(12, 34, 56); }\n')
 }
 
 function headersOf(file: string): Promise<{ status: number; contentType: string; acao: string }> {
@@ -83,7 +85,7 @@ test('画板资源 E2E', async (t) => {
       assert.equal(font.contentType, 'font/woff2')
       assert.equal(font.acao, '*', '字体请求是 CORS 请求，没有 ACAO 会被拦')
 
-      const css = await headersOf(`${base}/design-system/rules.css`)
+      const css = await headersOf(`${base}/assets/css/rules.css`)
       assert.equal(css.status, 200)
       assert.equal(css.contentType, 'text/css; charset=utf-8')
     })

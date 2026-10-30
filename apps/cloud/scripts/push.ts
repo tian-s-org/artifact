@@ -4,7 +4,7 @@
  *   node --import tsx scripts/push.ts brand architecture web-ui
  *   node --import tsx scripts/push.ts --all --url https://artifact.tianyw0.xyz
  *
- * 只推 layout.json、context.md、artboards/、assets/、design-system/；
+ * 只推 layout.json、context.md、artboards/、assets/；
  * versions/ 不上传（云端自己存版本），点文件跳过。
  * 密钥取 ARTIFACT_KEY 环境变量，或 apps/cloud/.dev.vars 里的 SITE_KEY。
  */
@@ -91,7 +91,6 @@ async function collectFiles(projectDir: string): Promise<FileInput[]> {
 
   await walk('artboards').catch(() => undefined)
   await walk('assets').catch(() => undefined)
-  await walk('design-system').catch(() => undefined)
   for (const fixed of ['layout.json', 'context.md']) {
     await add(fixed).catch(() => undefined)
   }

@@ -55,7 +55,7 @@ export function boardHtml(title: string, accent: string, extra = ''): string {
 
 export function writeProject(root: string, project: FixtureProject): void {
   const dir = path.join(root, project.id)
-  fs.mkdirSync(path.join(dir, 'design-system'), { recursive: true })
+  fs.mkdirSync(dir, { recursive: true })
   fs.writeFileSync(
     path.join(dir, 'layout.json'),
     `${JSON.stringify(

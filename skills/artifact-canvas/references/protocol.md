@@ -5,13 +5,15 @@
 ```
 <项目>/.artifact/             一个目录就是一个画布
 ├── layout.json               画布元数据（唯一入口）
-├── context.md                项目背景，给 agent 读
 ├── artboards/<画板 id>/index.html   设计本体（可选同目录 CSS/图片）
 └── assets/{images,fonts,css}/       可选：跨画板共享的资源
 ```
 
 共享样式放 `assets/css/`，画板用 `../../assets/css/base.css` 引用。
 如果用户要「设计规范」，把它**画成一块画板**，不要写进 `layout.json`。
+
+**原型就是事实来源**：`context.md` 与 `layout.json` 的 `context` 字段是遗留能力，协议仍兼容（老画布不会坏），
+但新画布不要再有——要说明就画一块画板，或者写 `.artifact/AGENTS.md`。
 
 ## layout.json
 
@@ -20,7 +22,6 @@
   "protocol": 1,
   "id": "brand",
   "name": "Northstar 品牌",
-  "context": "context.md",
   "boards": [
     { "id": "board-001", "name": "品牌核心", "x": 0, "y": 0, "width": 1440, "height": 900,
       "file": "artboards/board-001/index.html", "order": 1 }

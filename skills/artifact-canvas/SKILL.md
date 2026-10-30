@@ -23,7 +23,6 @@ description: 把品牌、界面、架构图等设计落成静态 HTML 画框，�
 ```
 <项目>/.artifact/
 ├── layout.json                 画框清单（唯一入口）
-├── context.md                  可选：给 agent 读的背景
 ├── AGENTS.md                   可选：写作规范（建议从 assets/AGENTS.md 拷，只留本地）
 ├── artboards/<画框 id>/
 │   ├── index.html              必需：设计本体（静态 HTML/CSS/SVG，无脚本）
@@ -34,6 +33,10 @@ description: 把品牌、界面、架构图等设计落成静态 HTML 画框，�
     ├── fonts/
     └── css/base.css
 ```
+
+**原型就是事实来源**：产品怎么跑、规范是什么，都写在画板上，不另写说明文档。
+老画布里可能有 `context.md`（协议还认，`layout.json` 的 `context` 字段也还兼容），**但不要再新建、也不要维护**——
+要交代背景就画一块画板，或者写进 `AGENTS.md`；散文一改就得跟着改一遍，纯属冗余。
 
 **一块画布 = 一个随机链接**（`https://artifact.tianyw0.xyz/c/<id>`）。一个人可以有多块画布；
 画布无限大，靠坐标分区——同一个项目的多屏就多开画框，不要拆成多块画布。
@@ -85,7 +88,7 @@ npx @tian-s-org/canvas list                 # 我有哪些画布（含链接）
 ```
 
 - **第一次 push 会自动新建一块画布**，把它的随机 id 写进目录里的 `.canvas`，并打印链接；之后都推到这一块；
-- 推的是**源文件**：`layout.json`、`context.md`、`artboards/`、`assets/`，目录结构原样；
+- 推的是**源文件**：`layout.json`、`artboards/`、`assets/`，目录结构原样（老画布的 `context.md` 仍会上传，但别再用）；
 - 不编译、不打包、不内联；
 - 单文件 ≤ 8MB，一次 ≤ 200 个文件；
 - 每次 push 覆盖同名文件；云端没有版本，历史交给 git。
@@ -93,7 +96,8 @@ npx @tian-s-org/canvas list                 # 我有哪些画布（含链接）
 ## 改画框
 
 编辑 `artboards/<画框>/index.html`（或它旁边的 CSS/图片），然后 `push`。
-动手前先读 `<项目>/.artifact/context.md`；如果已有「规范 / 色板」画框，按它来。
+动手前先看画板本身：有「设计系统 / 规范」那一块就按它来，产品怎么跑就看对应的界面画板。
+不要为了记录背景去写 `context.md`——原型是事实来源，文档改了画板没改，两边就开始打架。
 
 页面每 2.5 秒轮询一次云端：push 完稍等就会自己换那一块，不刷新整页、不打断缩放。
 

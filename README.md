@@ -23,7 +23,6 @@ npx @tian-s-org/canvas open        # 打开画布
 ```
 .artifact/
 ├── layout.json                 画框清单
-├── context.md                  可选：给 agent 读的背景
 ├── artboards/<画框 id>/
 │   ├── index.html              设计本体（静态 HTML/CSS/SVG，无脚本）
 │   ├── style.css               可选：这块画框自己的样式
@@ -39,7 +38,6 @@ npx @tian-s-org/canvas open        # 打开画布
   "protocol": 1,
   "id": "skillbor",
   "name": "skillbor 原型",
-  "context": "context.md",
   "boards": [
     {
       "id": "board-001",

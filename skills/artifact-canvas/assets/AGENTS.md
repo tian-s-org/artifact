@@ -12,7 +12,9 @@
 | `assets/css/` 共享样式 | 你 | 能改，但影响所有画框。 |
 | 画板里的脚本、外网资源 | 沙箱 | 硬约束：脚本不执行，外网被 CSP 拦。 |
 
-**你该动的地方只有**：`layout.json` 的 `boards`、`artboards/`、`assets/`、`context.md`。
+**你该动的地方只有**：`layout.json` 的 `boards`、`artboards/`、`assets/`。
+
+**原型就是事实来源**：要交代背景就画一块画板，不写 `context.md` 这类散文——改一次文档还要同步一次画板，两边迟早对不上。
 
 ## 画框标题与序号
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { BoardView } from './types'
 
 /** 新一版画板加载好之后，用多久淡入（旧的那一帧还留在下面） */
@@ -12,8 +12,15 @@ interface Props {
 }
 
 /** 一块画框：标签 + iframe。画布只读，iframe 不接指针事件，双击落在这一层。 */
+/** 标签反向缩放：外层世界 zoom 是 s，标签乘 1/s，屏幕上始终 12.5px */
+const labelScale: CSSProperties = {
+  transform: 'scale(var(--label-scale, 1))',
+  transformOrigin: 'left bottom',
+}
+
 export function BoardFrame({ board, onFocus, showSpecs }: Props) {
   const [hovered, setHovered] = useState(false)
+  const indexText = String(board.index).padStart(2, '0')
 
   /* 换帧：src 变了先挂一张新 iframe 在旧帧上面，等它 load 完淡入，再撤掉旧的。
      直接换 src 会白闪一下——旧文件先被清掉，新文件才画出来。 */
@@ -58,14 +65,20 @@ export function BoardFrame({ board, onFocus, showSpecs }: Props) {
       }}
       onPointerLeave={() => setHovered(false)}
     >
-      {/* 平时是灰标签；打开「尺寸」并悬停时换成 Figma 式的蓝标签 */}
+      {/* 标签固定屏幕字号：跟着画布缩放会反向缩，Figma 同款做法 */}
       {showSpecs && hovered ? (
-        <span className="board-spec pointer-events-none absolute bottom-[calc(100%_+_6px)] left-0 rounded-[4px] bg-accent px-6 py-3 font-mono text-[11px] leading-none whitespace-nowrap text-white select-none">
-          {board.name} · {board.width} × {board.height}
+        <span
+          className="board-spec pointer-events-none absolute bottom-[calc(100%_+_6px)] left-0 rounded-[4px] bg-accent px-7 py-4 text-[12px] leading-none whitespace-nowrap text-white select-none"
+          style={labelScale}
+        >
+          {indexText} {board.name} · {board.width} × {board.height}
         </span>
       ) : (
-        <span className="board-label pointer-events-none absolute bottom-[calc(100%_+_6px)] left-[-4px] flex items-baseline gap-8 text-[12px] leading-none whitespace-nowrap text-ink-2 select-none">
-          <span className="board-id font-mono text-[11px] text-ink-3">{board.id}</span>
+        <span
+          className="board-label pointer-events-none absolute bottom-[calc(100%_+_6px)] left-[-4px] flex items-baseline gap-8 text-[12.5px] leading-none whitespace-nowrap text-ink-2 select-none"
+          style={labelScale}
+        >
+          <span className="board-index font-mono text-[11.5px] text-ink-3">{indexText}</span>
           <span>{board.name}</span>
         </span>
       )}

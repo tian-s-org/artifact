@@ -41,7 +41,8 @@ node cli/artifact.mjs skill install --target all --force
 
 - 画布是只读的：不加编辑能力、不加拖拽布局、不加版本面板
 - 画布的视觉：Tailwind v4 工具类，`--spacing: 1px`（`p-8` = 8px）；颜色只从 `@theme` 令牌取
-- `.board`、`.board-frame`、`.focus-layer`、`.canvas-tools`、`.board-id`、`.board-spec` 是测试/选择器挂点，别删
+- `.board`、`.board-frame`、`.focus-layer`、`.canvas-tools`、`.board-index`、`.board-label`、`.board-spec` 是测试/选择器挂点，别删
+- 画框标签是 `01 名称`（序号 + 名称），**固定 12.5px 屏幕字号**：世界层 zoom 时用 `transform: scale(1/scale)` 反向缩放
 - 内部模块名 `@tian-s-org/schema`、`@tian-s-org/canvas-core` 由 tsconfig paths 指向 `src/protocol`、`src/core`
 - 云端写操作一律 `POST`（Cloudflare 边缘挡 PUT/PATCH/DELETE）；接口路径不要出现 `config`（WAF）
 - 密钥只放 `.dev.vars`（gitignore）或 `wrangler secret`，不进代码、文档、提交

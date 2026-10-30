@@ -1,6 +1,8 @@
 export interface BoardView {
   id: string
   name: string
+  /** 画布上的阅读序号，从 1 开始（按 order 排完后的位置） */
+  index: number
   /** 画布世界坐标 */
   x: number
   y: number

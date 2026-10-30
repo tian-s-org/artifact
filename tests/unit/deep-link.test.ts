@@ -7,6 +7,7 @@ function board(id: string, x: number, overrides: Partial<BoardView> = {}): Board
   return {
     id,
     name: id,
+    index: 1,
     x,
     y: 0,
     width: 1440,

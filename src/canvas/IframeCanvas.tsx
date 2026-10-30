@@ -63,6 +63,8 @@ export function IframeCanvas({ boards, onOpen, overlayOpen, showSpecs, onToggleS
       isBackground: (target) => target === host || target === world,
       onChange: (t) => {
         if (pctRef.current) pctRef.current.textContent = `${Math.round(t.scale * 100)}%`
+        // 画框标签反向缩放，屏幕上保持固定字号（Figma 同款）
+        world.style.setProperty('--label-scale', String(1 / t.scale))
       },
     })
     vp.attach()
@@ -86,6 +88,7 @@ export function IframeCanvas({ boards, onOpen, overlayOpen, showSpecs, onToggleS
     if (!vp) return
     fittedRef.current = true
     applyInitialView(vp, boards)
+    worldRef.current?.style.setProperty('--label-scale', String(1 / vp.transform.scale))
   }, [boards])
 
   const fit = useCallback(() => {

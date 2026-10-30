@@ -105,9 +105,10 @@ export function boardsToViews(
   if (!layout) return []
   return [...layout.boards]
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((board) => ({
+    .map((board, position) => ({
       id: board.id,
       name: board.name,
+      index: position + 1,
       x: board.x,
       y: board.y,
       width: board.width,

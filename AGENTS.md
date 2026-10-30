@@ -39,9 +39,6 @@ node cli/artifact.mjs skill install --target all --force
 
 ## 改动约定
 
-- `.artifact/` 是 artifact 自己的自举原型，**改了就跟着代码一起提交**（`.canvas` 是画布 id 绑定，已忽略）；
-  这样每一次改版都能在 git 里看 diff。
-
 - 画布是只读的：不加编辑能力、不加拖拽布局、不加版本面板
 - 画布的视觉：Tailwind v4 工具类，`--spacing: 1px`（`p-8` = 8px）；颜色只从 `@theme` 令牌取
 - `.board`、`.board-frame`、`.focus-layer`、`.canvas-tools`、`.board-index`、`.board-label`、`.board-spec` 是测试/选择器挂点，别删

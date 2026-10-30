@@ -110,11 +110,14 @@ export function fitRect(
   return { x, y, scale }
 }
 
-/** 点阵网格的屏幕间距：落在 [20, 48] 像素里最好看，超出就成倍调整。 */
+/** 点阵网格的屏幕间距：跟内容一起缩放，点阵才代表真实尺寸。 */
 export function gridSpacing(base: number, scale: number): number {
-  let sp = base * scale
-  if (!Number.isFinite(sp) || sp <= 0) return base
-  while (sp < 20) sp *= 2
-  while (sp > 48) sp /= 2
-  return sp
+  const sp = base * scale
+  return Number.isFinite(sp) && sp > 0 ? sp : base
+}
+
+/** 点阵的可见度：缩到 20% 以下就基本看不见，50% 以上全显。 */
+export function gridOpacity(scale: number): number {
+  if (!Number.isFinite(scale) || scale <= 0) return 0
+  return clamp((scale - 0.2) / 0.3, 0, 1)
 }

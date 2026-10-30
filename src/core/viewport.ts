@@ -7,6 +7,7 @@ import {
   DEFAULT_MAX_SCALE,
   DEFAULT_MIN_SCALE,
   fitRect,
+  gridOpacity,
   gridSpacing,
   unionRect,
   worldRect,
@@ -22,7 +23,8 @@ export interface ViewportOptions {
   maxScale?: number
   /** 世界坐标里点阵的基准间距 */
   gridSize?: number
-  gridColor?: string
+  /** 点阵在最清楚时的透明度；缩得太小会自动淡出 */
+  gridAlpha?: number
   background?: string
   /** localStorage 键；null 表示不持久化 */
   persistKey?: string | null
@@ -236,10 +238,7 @@ export class Viewport {
   }
 
   private paintHost(): void {
-    const color = this.opts.gridColor ?? 'rgba(0, 0, 0, 0.10)'
     this.host.style.backgroundColor = this.opts.background ?? '#f5f5f5'
-    this.host.style.backgroundImage =
-      `radial-gradient(circle, ${color} 1px, transparent 1px)`
     this.host.style.backgroundRepeat = 'repeat'
   }
 
@@ -251,8 +250,13 @@ export class Viewport {
     this.world.style.top = `${y / scale}px`
     this.world.style.zoom = String(scale)
     const sp = gridSpacing(this.opts.gridSize ?? 24, scale)
+    const alpha = (this.opts.gridAlpha ?? 0.1) * gridOpacity(scale)
     this.host.style.backgroundSize = `${sp}px ${sp}px`
     this.host.style.backgroundPosition = `${x}px ${y}px`
+    this.host.style.backgroundImage =
+      alpha > 0.002
+        ? `radial-gradient(circle, rgba(0, 0, 0, ${alpha.toFixed(3)}) 1px, transparent 1px)`
+        : 'none'
     this.opts.onChange?.(this.t)
     this.scheduleSave()
   }

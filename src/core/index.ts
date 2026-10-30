@@ -3,6 +3,7 @@ export {
   DEFAULT_MAX_SCALE,
   DEFAULT_MIN_SCALE,
   fitRect,
+  gridOpacity,
   gridSpacing,
   naturalSize,
   unionRect,

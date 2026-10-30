@@ -120,11 +120,14 @@ export default {
           headers: { authorization: `Bearer ${tokens.access_token}` },
         })
         if (!infoRes.ok) return fail(401, 'google-user', '拿不到 Google 用户信息')
-        const info = (await infoRes.json()) as { email?: string; email_verified?: boolean }
+        const info = (await infoRes.json()) as { email?: string; email_verified?: boolean; name?: string; picture?: string }
         const email = info.email ?? ''
         if (!info.email_verified || !emailAllowed(email, env)) return blockedPage(null)
 
-        const cookie = await sessionCookie({ email, exp: sessionExpiry() }, env)
+        const cookie = await sessionCookie(
+          { email, name: info.name, picture: info.picture, exp: sessionExpiry() },
+          env,
+        )
         return redirect(state.redirect.startsWith('/') ? state.redirect : '/', cookie)
       }
 
@@ -171,7 +174,12 @@ export default {
 
       if (url.pathname === '/api/me') {
         if (access.email === null) return fail(401, 'unauthorized', '未登录')
-        return json(200, { email: access.email, canWrite: access.canWrite })
+        return json(200, {
+          email: access.email,
+          name: access.name ?? null,
+          picture: access.picture ?? null,
+          canWrite: access.canWrite,
+        })
       }
 
       if (url.pathname === '/api/logout' && request.method === 'POST') {

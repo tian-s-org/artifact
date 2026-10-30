@@ -1,6 +1,8 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { fetchMe, type Me } from '../api/client'
 import { IframeCanvas } from '../canvas/IframeCanvas'
 import { FocusOverlay } from '../canvas/FocusOverlay'
+import { UserChip } from '../canvas/UserChip'
 import type { BoardView } from '../canvas/types'
 import { boardsToViews, useProject } from '../store/project-store'
 
@@ -18,6 +20,20 @@ export function CanvasPage({ canvasId }: { canvasId: string }) {
     [state.layout, state.meta, state.filesBase],
   )
   const [focusedId, setFocusedId] = useState<string | null>(null)
+  const [me, setMe] = useState<Me | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    fetchMe()
+      .then((data) => {
+        if (alive) setMe(data)
+      })
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [])
+
   // 悬停显示尺寸：纯展示开关，记在本机
   const [showSpecs, setShowSpecs] = useState(() => {
     try {
@@ -90,6 +106,11 @@ export function CanvasPage({ canvasId }: { canvasId: string }) {
         }`}
       >
         <span className="project-name font-semibold text-ink">{state.layout?.name ?? '未命名画布'}</span>
+      </div>
+
+      {/* 右上角：头像 + 昵称，点一下回个人中心 */}
+      <div className={`fixed top-14 right-16 z-200 ${focused ? 'invisible' : ''}`}>
+        <UserChip me={me} />
       </div>
 
       {state.status === 'ready' && boards.length === 0 && (

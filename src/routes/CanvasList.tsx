@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError, fetchCanvases, fetchMe, logout, type CanvasSummary, type Me } from '../api/client'
+import { UserChip } from '../canvas/UserChip'
 
 type View = 'cards' | 'list'
 
@@ -76,7 +77,7 @@ export function CanvasList() {
           <div className="ml-auto flex items-center gap-10">
             {me ? (
               <>
-                <span className="text-[12.5px] text-ink-2">{me.email}</span>
+                <UserChip me={me} plain />
                 <button
                   type="button"
                   className="cursor-pointer rounded-[6px] bg-black/6 px-10 py-4 text-[12px] text-ink-2 hover:bg-black/10"

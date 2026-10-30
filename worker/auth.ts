@@ -86,6 +86,8 @@ export function googleEnabled(env: Env): boolean {
 
 export interface Session {
   email: string
+  name?: string
+  picture?: string
   exp: number
 }
 
@@ -106,6 +108,8 @@ export async function readSession(request: Request, env: Env): Promise<Session |
     const session = JSON.parse(text) as Session
     if (typeof session.email !== 'string' || typeof session.exp !== 'number') return null
     if (session.exp < Date.now()) return null
+    if (session.name !== undefined && typeof session.name !== 'string') delete session.name
+    if (session.picture !== undefined && typeof session.picture !== 'string') delete session.picture
     return session
   } catch {
     return null
@@ -258,11 +262,16 @@ export interface Access {
   canWrite: boolean
   /** 登录的人，没有就是 null */
   email: string | null
+  /** Google 资料，只有会话里有；CLI token 没有 */
+  name?: string
+  picture?: string
 }
 
 export async function checkAccess(request: Request, env: Env, storage: R2Storage): Promise<Access> {
   const session = await readSession(request, env)
-  if (session) return { allowed: true, canWrite: true, email: session.email }
+  if (session) {
+    return { allowed: true, canWrite: true, email: session.email, name: session.name, picture: session.picture }
+  }
 
   // 随机分享链接进来的人：只读
   const share = cookieValue(request, SHARE_COOKIE)

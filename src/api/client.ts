@@ -61,6 +61,8 @@ export function fetchCanvases(): Promise<{ canvases: CanvasSummary[] }> {
 
 export interface Me {
   email: string
+  name: string | null
+  picture: string | null
   canWrite: boolean
 }
 

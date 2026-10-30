@@ -22,6 +22,41 @@ Agent 把设计写成静态 HTML 画板，`push` 到云端；浏览器打开一�
 - **画布无限大**：多个画框靠坐标分区（品牌区、架构区、UI 区……）。
 - **文件即真源**：本地目录是工作副本，云端是同一份结构的镜像。
 
+## 2.1 仓库结构（根目录即包）
+
+只有一个包，不需要 pnpm workspace：
+
+```
+artifact/
+├── package.json            @tian-s-org/canvas；bin: artifact
+├── pnpm-lock.yaml
+├── tsconfig.json
+├── vite.config.ts
+├── index.html              SPA 入口
+├── wrangler.jsonc          两个域名 + R2
+├── README.md · AGENTS.md · ARCHITECTURE.md
+├── .gitignore
+│
+├── src/                    浏览器里的只读画布
+│   ├── core/               viewport / gestures / geometry
+│   ├── protocol/           layout.json 校验 + 骨架模板
+│   ├── shell/              IframeCanvas / BoardFrame / FocusOverlay / deep-link
+│   ├── store/              project-store（轮询 /api/state）
+│   └── api/client.ts
+│
+├── worker/                 云端运行时
+│   ├── index.ts · api.ts · files.ts · storage.ts · auth.ts · paths.ts
+│
+├── cli/                    artifact push / open / skill install
+│   └── artifact.mjs        shebang 入口
+│
+├── skills/artifact-canvas/ SKILL.md + references/ + assets/ + scripts/
+│
+└── tests/                  unit · worker · e2e（wrangler dev + Playwright）
+```
+
+没有 `apps/`、没有 `packages/`、没有本地 Node 服务、没有 `versions/`。
+
 ## 3. 运行时
 
 ```
@@ -129,16 +164,16 @@ artifact skill install    # 装技能
 
 ## 8. 待定
 
-1. 写入主路径：本地目录 + push，还是 agent 直接 HTTP 写云端（或两者并存）。
+1. ~~写入主路径~~ 已定：**本地目录 + push**；单文件改动也可走 HTTP 接口。
 2. `SITE_KEY` 与文件令牌的轮换方式。
 3. push 的冲突策略：整包覆盖 / 增量对比 / 先拉再推。
 4. 现有线上的三个项目如何并成一个画布（或清空重来）。
 
 ## 9. 实施阶段
 
-1. **单画布 Worker + 只读 SPA**：去掉 pid / Hub / 版本 / 拖拽，接口收成 `/api/state`、`/api/file(s)`、`/files/<rel>`。
-2. **CLI**：`push` / `open` / `skill install`；删掉本地起服务的命令。
-3. **合包**：视口引擎、协议、SPA、Worker、CLI、技能并进 `@tian-s-org/canvas` 一个包。
+1. **仓库收拢**：根目录即包，删 `pnpm-workspace.yaml` / `packages/` / `apps/`；协议、引擎、CLI、技能并进来。
+2. **删本地服务**：`server/` 整块移除，CLI 改成 `push` / `open` / `skill install`。
+3. **单画布 Worker + 只读 SPA**：去掉 pid / Hub / 版本 / 拖拽，接口收成 `/api/state`、`/api/file(s)`、`/f/<hmac>/<rel>`。
 4. **迁移**：线上三份项目并成一份画布；技能与文档同步。
 
 每步都跑 `typecheck + 单测 + worker 测试 + 浏览器 E2E`，绿了再进下一步。

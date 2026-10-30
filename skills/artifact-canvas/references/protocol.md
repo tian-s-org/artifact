@@ -22,7 +22,7 @@
   "name": "Northstar 品牌",
   "context": "context.md",
   "boards": [
-    { "id": "board-001", "name": "品牌核心", "x": 0, "y": 0, "width": 1200, "height": 750,
+    { "id": "board-001", "name": "品牌核心", "x": 0, "y": 0, "width": 1440, "height": 900,
       "file": "artboards/board-001/index.html", "order": 1 }
   ]
 }

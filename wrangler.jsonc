@@ -1,12 +1,12 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "artifact",
-  "main": "src/worker.ts",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-05-11",
   "workers_dev": true,
-  // 前端就是本地版那份 SPA（apps/cloud/package.json 的 build:web 构建到这里）
+  // 前端就是 vite 构建出来的 dist
   "assets": {
-    "directory": "./web",
+    "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
     // /api 与 /f 必须先进 Worker；其余静态文件由 assets 直接发

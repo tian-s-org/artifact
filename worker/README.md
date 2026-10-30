@@ -62,7 +62,7 @@ pnpm cloud:push <项目 id…>                     # 把本地项目推上去
 pnpm --filter @tian-s-org/cloud smoke          # 真浏览器冒烟：3 块画板、沙箱、改文件自动刷新
 ```
 
-密钥（`wrangler secret put` 上传，本地写在 `apps/cloud/.dev.vars`，已 gitignore）：
+密钥（`wrangler secret put` 上传，本地写在仓库根 `.dev.vars`，已 gitignore）：
 
 | 变量 | 用途 |
 | --- | --- |

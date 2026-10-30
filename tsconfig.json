@@ -17,8 +17,10 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@tian-s-org/schema": ["src/protocol/index.ts"],
+      "@tian-s-org/canvas-core": ["src/core/index.ts"]
     }
   },
-  "include": ["src", "server", "scripts", "tests", "vite.config.ts"]
+  "include": ["src", "server", "worker", "cli", "scripts", "tests", "vite.config.ts"]
 }

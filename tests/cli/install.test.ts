@@ -3,9 +3,9 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
-import { findRepoRoot, resolveCanvas } from '../src/canvas'
-import { installSkill, installedInfo, MARKER, SKILL_NAME } from '../src/install'
-import { customTarget, resolveTargets, skillTargets } from '../src/targets'
+import { findRepoRoot, resolveCanvas } from '../../cli/canvas'
+import { installSkill, installedInfo, MARKER, SKILL_NAME } from '../../cli/install'
+import { customTarget, resolveTargets, skillTargets } from '../../cli/targets'
 
 async function tempDir(prefix: string): Promise<string> {
   return fs.mkdtemp(path.join(os.tmpdir(), prefix))
@@ -102,9 +102,9 @@ test('目标解析：默认 claude，all 只含用户级，未知 id 报错，--
 
 test('找仓库与解析画布参数', async () => {
   const repo = findRepoRoot(path.join(process.cwd(), 'src'))
-  assert.ok(repo, '从 packages/artifact-cli/src 往上应该能找到 artifact 仓库')
+  assert.ok(repo, '从 tests/cli 往上应该能找到 artifact 仓库')
   const resolved = resolveCanvas({ repo })
-  assert.equal(resolved.bin, path.join(repo, 'packages', 'canvas', 'bin', 'artifact-canvas.mjs'))
+  assert.equal(resolved.bin, path.join(repo, 'bin', 'artifact-canvas.mjs'))
   assert.equal(resolved.projects, path.join(repo, 'projects'))
 
   const empty = await tempDir('artifact-cli-empty-')

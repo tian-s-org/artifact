@@ -1,5 +1,5 @@
 /** 测试用的内存 R2：只实现我们用到的那几个方法，行为与 R2 一致（含 uploaded 时间） */
-import type { Bucket, BucketListResult, BucketObject, BucketObjectHead, Env } from '../src/env'
+import type { Bucket, BucketListResult, BucketObject, BucketObjectHead, Env } from '../../worker/env'
 
 interface Stored {
   data: Uint8Array

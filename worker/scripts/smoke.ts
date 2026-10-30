@@ -14,9 +14,9 @@ const CLOUD_ROOT = path.resolve(HERE, '..')
 
 async function readKey(): Promise<string> {
   if (process.env.ARTIFACT_KEY) return process.env.ARTIFACT_KEY
-  const text = await fs.readFile(path.join(CLOUD_ROOT, '.dev.vars'), 'utf8')
+  const text = await fs.readFile(path.join(CLOUD_ROOT, '..', '.dev.vars'), 'utf8')
   const match = /^SITE_KEY=(.*)$/m.exec(text)
-  if (!match?.[1]) throw new Error('找不到 SITE_KEY：设 ARTIFACT_KEY 或写 apps/cloud/.dev.vars')
+  if (!match?.[1]) throw new Error('找不到 SITE_KEY：设 ARTIFACT_KEY 或写仓库根的 .dev.vars')
   return match[1].trim()
 }
 

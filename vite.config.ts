@@ -15,6 +15,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(here, 'src'),
+      // 包已经合并到同一仓库，这两个名字保留为内部模块别名，免得改一堆 import
+      '@tian-s-org/schema': path.resolve(here, 'src/protocol/index.ts'),
+      '@tian-s-org/canvas-core': path.resolve(here, 'src/core/index.ts'),
     },
   },
   server: {

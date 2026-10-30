@@ -8,12 +8,11 @@
  */
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
-import { createRequire } from 'node:module'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-/** 仓库里底座所在目录（--repo 回退用） */
-const REPO_APP = path.join('packages', 'canvas')
-const REPO_BIN = path.join(REPO_APP, 'bin', 'artifact-canvas.mjs')
+/** 仓库（= 包）里的底座入口 */
+const REPO_BIN = path.join('bin', 'artifact-canvas.mjs')
 
 export interface CanvasOptions {
   repo?: string
@@ -30,7 +29,7 @@ export interface ResolvedCanvas {
   label: string
 }
 
-/** 从 start 往上找带 packages/canvas/bin/artifact-canvas.mjs 的目录 */
+/** 从 start 往上找带 bin/artifact-canvas.mjs 的目录（--repo 回退用） */
 export function findRepoRoot(start: string = process.cwd()): string | null {
   let dir = path.resolve(start)
   for (;;) {
@@ -41,11 +40,9 @@ export function findRepoRoot(start: string = process.cwd()): string | null {
   }
 }
 
-/** 装在本包依赖里的底座 bin */
+/** 同包里的底座 bin */
 export function findCanvasBin(): string {
-  const require = createRequire(import.meta.url)
-  const pkgJson = require.resolve('@tian-s-org/canvas/package.json')
-  return path.join(path.dirname(pkgJson), 'bin', 'artifact-canvas.mjs')
+  return fileURLToPath(new URL('../bin/artifact-canvas.mjs', import.meta.url))
 }
 
 export function resolveCanvas(options: CanvasOptions): ResolvedCanvas {

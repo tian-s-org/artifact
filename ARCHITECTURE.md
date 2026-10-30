@@ -114,18 +114,48 @@ agent ──artifact push──▶ /api/file(s) ──▶ R2        │
 1. 画板 iframe 永远 `sandbox=""`，**永不加** `allow-same-origin`。
 2. 画板 CSP：`script-src 'none'`、`connect-src 'none'`，只放行文件源与 `data:`。
 3. `/files` 只发 `artboards/`、`assets/`；`layout.json`、`context.md` 一律 403。
-4. 写接口需要 Bearer；app 页面需要 `SITE_KEY` 门禁。
+4. 写接口需要 Bearer（CLI token）；app 页面需要 Google 会话；两者都可撤销。
 5. 密钥只放 `.dev.vars`（gitignore）或 `wrangler secret`，不进代码、文档、提交。
 
 ### 4.5 CLI 与技能
 
 ```
+artifact login            # 打开浏览器授权，本地保存 token
 artifact push [目录]      # 本地 .artifact → 云端（默认当前目录）
 artifact open             # 打开画布链接
 artifact skill install    # 装技能
 ```
 
 技能指导 agent：建 `.artifact/` → 写画板 → `push` → `open`；并说明尺寸开关与只读边界。
+
+### 4.6 身份与授权（2026-10-30 新增）
+
+**Web 用 Google 登录**：
+
+- OAuth 2.0（PKCE），回调后种一枚签名 HttpOnly Cookie 作为会话；
+- 只允许白名单邮箱 / 域名登录（部署时配置），其他人看到 403；
+- 页面只读，登录态只用来确认「谁能看」「谁能授权」。
+
+**本地 skill 由 Web 授权**：
+
+```
+artifact login
+  ├─ CLI 起一个一次性回调地址（127.0.0.1:<随机端口>）
+  ├─ 打开浏览器 → /cli/authorize?redirect=…&state=…
+  ├─ 用户在 Web 上已登录（Google），点「允许」→ 回调带上一次性 code
+  └─ CLI 用 code 换长期 token，存 ~/.config/artifact/credentials.json（0600）
+```
+
+- token 在服务端只存哈希（R2 对象 `auth/tokens/<hash>.json`：创建时间、名称、最后使用时间）；
+- `artifact push` / `open` 用 `Authorization: Bearer <token>`；
+- Web 上可以列出、撤销这些 token（「本地授权」页面）。
+
+**待定**：
+
+1. `SITE_KEY` 门禁退役，还是退化成「分享链接」的一次性 token？
+2. 单画布的归属：一个部署只有一个 owner，还是多人可写？
+3. token 有效期（永久 / 90 天滚动）与撤销粒度（按设备）。
+4. 白名单按邮箱还是按 Google Workspace 域名。
 
 ## 5. push 的语义
 

@@ -6,7 +6,7 @@
  *
  * 只推 layout.json、context.md、artboards/、assets/；
  * versions/ 不上传（云端自己存版本），点文件跳过。
- * 密钥取 ARTIFACT_KEY 环境变量，或 apps/cloud/.dev.vars 里的 SITE_KEY。
+ * 密钥取 ARTIFACT_KEY 环境变量，或仓库根 .dev.vars 里的 SITE_KEY。
  */
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const CLOUD_ROOT = path.resolve(HERE, '..')
-const REPO_ROOT = path.resolve(CLOUD_ROOT, '../..')
+const REPO_ROOT = path.resolve(CLOUD_ROOT, '..')
 const DEFAULT_PROJECTS = path.join(REPO_ROOT, 'projects')
 const BINARY_EXT = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif', '.woff', '.woff2', '.ttf', '.otf'])
 
@@ -29,7 +29,7 @@ interface Args {
 async function readDevVars(): Promise<Record<string, string>> {
   const out: Record<string, string> = {}
   try {
-    const text = await fs.readFile(path.join(CLOUD_ROOT, '.dev.vars'), 'utf8')
+    const text = await fs.readFile(path.join(REPO_ROOT, '.dev.vars'), 'utf8')
     for (const line of text.split('\n')) {
       const match = /^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/.exec(line)
       if (match?.[1]) out[match[1]] = (match[2] ?? '').replace(/^["']|["']$/g, '')
@@ -117,7 +117,7 @@ async function pushProject(projectId: string, args: Args): Promise<void> {
 
 async function main(): Promise<void> {
   const args = await parseArgs(process.argv.slice(2))
-  if (args.key === '') throw new Error('缺少密钥：设 ARTIFACT_KEY，或在 apps/cloud/.dev.vars 里写 SITE_KEY')
+  if (args.key === '') throw new Error('缺少密钥：设 ARTIFACT_KEY，或在仓库根 .dev.vars 里写 SITE_KEY')
 
   let ids = args.projects
   if (args.all || ids.length === 0) {

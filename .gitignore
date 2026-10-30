@@ -7,9 +7,8 @@ dist-server/
 tests/.tmp/
 
 # 云端
-apps/cloud/web/
-apps/cloud/.wrangler/
-apps/cloud/.dev.vars
+.wrangler/
+.dev.vars
 
 # 发布用：本地 npm 配置里带 token，绝不提交
 .npmrc

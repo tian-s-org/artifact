@@ -11,22 +11,6 @@ export const CONTEXT_TEMPLATE = `# 项目背景
 （这段文字是给 Agent 看的，不显示在画布上。）
 `
 
-export const GUIDELINES_TEMPLATE = `# 设计规范
-
-## 色彩
-
-## 字体
-
-## 间距
-`
-
-export const TOKENS_TEMPLATE = `{
-  "color": {},
-  "font": {},
-  "space": {}
-}
-`
-
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c)
 }

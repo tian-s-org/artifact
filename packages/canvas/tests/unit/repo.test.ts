@@ -14,15 +14,16 @@ async function withTempRoot<T>(fn: (root: string) => Promise<T>): Promise<T> {
   }
 }
 
-test('createProject 建出 canvas.json、context.md 和设计规范骨架', async () => {
+test('createProject 只建 canvas.json 和 context.md', async () => {
   await withTempRoot(async (root) => {
     const repo = new FsProjectRepository(root)
     const doc = await repo.createProject({ id: 'brand', name: 'Northstar' })
     assert.equal(doc.id, 'brand')
     assert.equal(doc.protocol, 1)
     assert.deepEqual(doc.boards, [])
+    assert.equal('designSystem' in doc, false, '协议里不再有 designSystem')
 
-    for (const rel of ['canvas.json', 'context.md', 'design-system/guidelines.md', 'design-system/tokens.json']) {
+    for (const rel of ['canvas.json', 'context.md']) {
       const stat = await fs.stat(path.join(root, 'brand', rel))
       assert.ok(stat.isFile(), rel)
     }

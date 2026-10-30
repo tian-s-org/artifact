@@ -14,7 +14,7 @@ Agent 把设计写成静态 HTML 画板，`push` 到云端；浏览器打开一�
 ├── canvas.json                 画框清单（位置、尺寸、名字、文件）
 ├── artboards/<id>/index.html   设计本体（静态 HTML，无脚本）
 ├── assets/{images,fonts}/
-└── design-system/              令牌与规则（可选）
+└── design-system/              可选：共享 CSS 等普通文件（协议不引用它）
 ```
 
 - **一个部署 = 一个画布**：没有项目列表、没有 `pid`、没有版本。

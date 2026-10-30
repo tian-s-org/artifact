@@ -13,11 +13,6 @@ const ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/
 /** 画板文件必须落在 artboards/ 下、以 .html 结尾，且不能穿出项目目录 */
 const BOARD_FILE_RE = /^artboards\/[a-z0-9][a-z0-9-]{0,63}\/index\.html$/
 
-export interface DesignSystemRef {
-  tokens?: string
-  guidelines?: string
-}
-
 export interface BoardSpec {
   id: string
   name: string
@@ -36,8 +31,6 @@ export interface CanvasDoc {
   id: string
   name: string
   context?: string
-  designSystem?: DesignSystemRef
-  version?: { current?: string; savedAt?: string }
   boards: BoardSpec[]
   [key: string]: unknown
 }
@@ -146,7 +139,6 @@ export function emptyCanvas(id: string, name: string): CanvasDoc {
     id,
     name,
     context: 'context.md',
-    designSystem: { tokens: 'design-system/tokens.json', guidelines: 'design-system/guidelines.md' },
     boards: [],
   }
 }

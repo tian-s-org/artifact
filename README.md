@@ -101,8 +101,6 @@ artifact/
   "id": "brand",
   "name": "Northstar 品牌",
   "context": "context.md",
-  "designSystem": { "tokens": "design-system/tokens.json", "guidelines": "design-system/guidelines.md" },
-  "version": { "current": "v1", "savedAt": "2026-10-29T10:00:00Z" },
   "boards": [
     {
       "id": "board-001",
@@ -115,7 +113,8 @@ artifact/
 }
 ```
 
-- `id`、画板 `id`：小写字母、数字、连字符。项目 id 就是 URL 里的 `/p/<id>`；画板 id 同时是 `artboards/` 下的目录名。
+- `id`、画板 `id`：小写字母、数字、连字符。画板 id 同时是 `artboards/` 下的目录名。
+- 协议只描述画框；设计规范/色板如果要做，就画成一块画板，不写进 `canvas.json`。
 - `file` 必须是 `artboards/<画板 id>/index.html`；不能穿出项目目录。
 - 未知字段原样保留，协议往后加东西不会打坏旧客户端；解析失败时画布停在上一份好数据并给出提示。
 - 画板内容是纯 HTML/CSS/SVG，不依赖画布实现；画布只负责把文件放进 iframe。
@@ -124,10 +123,9 @@ artifact/
 <项目>/.artifact/
 ├── canvas.json
 ├── context.md                  项目背景，给 Agent 看的
-├── design-system/              tokens.json、guidelines.md（可选，CSS 可以被画板引用）
 ├── artboards/board-001/index.html
 ├── assets/{fonts,images}/
-└── versions/                   内容寻址的版本快照（见下）
+└── design-system/              可选：共享 CSS 等普通文件（协议不引用它）
 ```
 
 ## HTTP 接口

@@ -64,7 +64,6 @@ export function writeProject(root: string, project: FixtureProject): void {
         id: project.id,
         name: project.name,
         context: 'context.md',
-        designSystem: { tokens: 'design-system/tokens.json', guidelines: 'design-system/guidelines.md' },
         boards: project.boards.map((board, index) => ({
           id: board.id,
           name: board.name,
@@ -81,8 +80,6 @@ export function writeProject(root: string, project: FixtureProject): void {
     )}\n`,
   )
   fs.writeFileSync(path.join(dir, 'context.md'), `# ${project.name}\n`)
-  fs.writeFileSync(path.join(dir, 'design-system', 'tokens.json'), '{}\n')
-  fs.writeFileSync(path.join(dir, 'design-system', 'guidelines.md'), '# 规则\n')
   for (const board of project.boards) {
     const boardDir = path.join(dir, 'artboards', board.id)
     fs.mkdirSync(boardDir, { recursive: true })

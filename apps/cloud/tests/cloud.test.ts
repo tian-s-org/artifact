@@ -65,7 +65,7 @@ test('项目仓库：建项目写骨架，建画板自动摆位并写 HTML', asy
   const doc = await repo.createProject({ id: 'brand', name: '品牌' })
   assert.equal(doc.boards.length, 0)
   assert.match(bucket.text('brand/context.md'), /项目背景/)
-  assert.match(bucket.text('brand/design-system/tokens.json'), /"color"/)
+  assert.equal(bucket.text('brand/design-system/tokens.json'), '', '不再脚手架设计规范文件')
 
   const board = await repo.addBoard('brand', { id: 'board-001', name: '首页', width: 1200, height: 800 })
   assert.equal(board.file, 'artboards/board-001/index.html')

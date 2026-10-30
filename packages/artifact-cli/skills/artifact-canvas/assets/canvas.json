@@ -3,10 +3,6 @@
   "id": "demo",
   "name": "示例项目",
   "context": "context.md",
-  "designSystem": {
-    "tokens": "design-system/tokens.json",
-    "guidelines": "design-system/guidelines.md"
-  },
   "boards": [
     {
       "id": "board-001",

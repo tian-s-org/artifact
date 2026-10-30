@@ -23,11 +23,11 @@ description: 把品牌、界面、架构图等设计落成静态 HTML 画板，�
 ```
 <项目>/.artifact/canvas.json                  画板摆在哪、叫什么、多大
 <项目>/.artifact/artboards/<画板>/index.html   设计本体
-<项目>/.artifact/versions/                    版本快照（内容寻址，别手改）
+<项目>/.artifact/assets/                      画板引用的图片、字体
 ```
 
-`.artifact/` 自己就是项目，**不要再套一层项目名**。项目根默认是当前目录的 `.artifact/`；
-要管多个项目时用 `artifact-cli canvas --projects <目录>` 或 `ARTIFACT_PROJECTS` 指到别的根，那边按 `<根>/<项目 id>/` 组织。
+`.artifact/` 自己就是画布，**不要套项目名，也没有多项目**。`design-system/` 不是协议的一部分：
+要给画板共享样式就放 CSS；用户要「设计规范」就画成一块画板。
 
 ## 装底座（先探，别重复装）
 
@@ -89,16 +89,16 @@ open http://127.0.0.1:4330                    # 项目列表；/p/<项目 id> �
 ```
 
 `id` 同时是目录名（小写字母、数字、连字符）。摆位：原点左上，x 向右、y 向下，单位画布像素；同组方案并排，间隔 160px 以上，别重叠。
-用户拖动画板会把新坐标写回 `canvas.json`。
+画布只读，位置只由 `canvas.json` 决定——挪画板就是改这里的 `x`/`y`。
 
 仓库里调试时可 `pnpm new-board <项目> "<画板名>"`，它自动登记并写骨架。
 
 ## 改画板
 
 直接编辑 `artboards/<画板>/index.html`，存盘即生效，只重载这一块。
-动手前先读 `<项目>/.artifact/context.md` 和 `design-system/`（令牌与规则），新画板照现有画板的视觉语言来。
+动手前先读 `<项目>/.artifact/context.md`；如果项目里已有「规范 / 色板」画板，按它来。
 
-已知边界：`assets/`、`design-system/` 里文件的变化**不会**触发画板重载，改完让用户刷新页面。
+已知边界：`assets/` 里文件的变化**不会**触发画板重载，改完让用户刷新页面。
 
 ## 画板 HTML 的硬约束
 

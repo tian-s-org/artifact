@@ -17,7 +17,7 @@ import {
   type BoardSpec,
   type CanvasDoc,
 } from '@tian-s-org/schema'
-import { boardSkeleton, CONTEXT_TEMPLATE, GUIDELINES_TEMPLATE, TOKENS_TEMPLATE } from '@tian-s-org/schema'
+import { boardSkeleton, CONTEXT_TEMPLATE } from '@tian-s-org/schema'
 import { projectDir, resolveInside, singleProjectId } from '../paths'
 import { withProjectLock } from './locks'
 import type { CreateProjectInput, ProjectRepository } from './types'
@@ -123,11 +123,9 @@ export class FsProjectRepository implements ProjectRepository {
       if (err instanceof ProjectExistsError) throw err
     }
     const doc = emptyCanvas(id, name)
-    await fs.mkdir(path.join(dir, 'design-system'), { recursive: true })
+    await fs.mkdir(dir, { recursive: true })
     await this.writeDoc(id, doc)
     await this.writeIfAbsent(dir, 'context.md', CONTEXT_TEMPLATE)
-    await this.writeIfAbsent(dir, 'design-system/guidelines.md', GUIDELINES_TEMPLATE)
-    await this.writeIfAbsent(dir, 'design-system/tokens.json', TOKENS_TEMPLATE)
     return doc
   }
 

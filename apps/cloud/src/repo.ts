@@ -16,7 +16,7 @@ import {
   type BoardSpec,
   type CanvasDoc,
 } from '@tian-s-org/schema'
-import { CONTEXT_TEMPLATE, GUIDELINES_TEMPLATE, boardSkeleton, TOKENS_TEMPLATE } from '@tian-s-org/schema'
+import { CONTEXT_TEMPLATE, boardSkeleton } from '@tian-s-org/schema'
 import { projectKey } from './paths'
 import type { R2Storage } from './storage'
 
@@ -97,8 +97,6 @@ export class CloudProjectRepository {
     const doc = emptyCanvas(id, name)
     await this.writeDoc(id, doc)
     await this.writeIfAbsent(id, 'context.md', CONTEXT_TEMPLATE)
-    await this.writeIfAbsent(id, 'design-system/guidelines.md', GUIDELINES_TEMPLATE)
-    await this.writeIfAbsent(id, 'design-system/tokens.json', TOKENS_TEMPLATE)
     return doc
   }
 

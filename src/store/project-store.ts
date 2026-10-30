@@ -32,10 +32,15 @@ const INITIAL: ProjectState = {
 const POLL_MS = 2500
 
 export class ProjectStore {
+  readonly canvasId: string
   private state: ProjectState = INITIAL
   private listeners = new Set<() => void>()
   private timer: number | null = null
   private stopped = false
+
+  constructor(canvasId: string) {
+    this.canvasId = canvasId
+  }
 
   getSnapshot = (): ProjectState => this.state
 
@@ -66,7 +71,7 @@ export class ProjectStore {
   async load(options: { quiet?: boolean } = {}): Promise<void> {
     if (!options.quiet) this.set({ status: this.state.layout ? 'ready' : 'loading' })
     try {
-      const payload = await fetchState()
+      const payload = await fetchState(this.canvasId)
       if (this.stopped) return
       const meta: Record<string, BoardMeta> = {}
       for (const board of payload.boards) meta[board.id] = board
@@ -112,8 +117,8 @@ export function boardsToViews(
     }))
 }
 
-export function useProject(): { store: ProjectStore; state: ProjectState } {
-  const store = useMemo(() => new ProjectStore(), [])
+export function useProject(canvasId: string): { store: ProjectStore; state: ProjectState } {
+  const store = useMemo(() => new ProjectStore(canvasId), [canvasId])
   useEffect(() => {
     store.start()
     return () => store.stop()

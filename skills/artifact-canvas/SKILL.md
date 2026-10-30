@@ -15,8 +15,8 @@ description: 把品牌、界面、架构图等设计落成静态 HTML 画框，�
 - [ ] 装了吗：`npx --no-install @tian-s-org/canvas --version`
 - [ ] 登录了吗：`npx @tian-s-org/canvas login`（首次会打开浏览器，用户用 Google 授权）
 - [ ] 建画布目录：没有 `<项目>/.artifact/` 就照 `assets/canvas.json`、`assets/board.html` 抄
-- [ ] 写完 push：`npx @tian-s-org/canvas push <项目>/.artifact`
-- [ ] 打开看：`npx @tian-s-org/canvas open`
+- [ ] 写完 push：`npx @tian-s-org/canvas push <项目>/.artifact`（第一次会自动建画布并打印链接）
+- [ ] 打开看：`npx @tian-s-org/canvas open --canvas <id>`
 
 ## 目录
 
@@ -34,7 +34,9 @@ description: 把品牌、界面、架构图等设计落成静态 HTML 画框，�
     └── css/base.css
 ```
 
-一个部署一块画布；画布无限大，靠坐标分区——多屏就多开画框，不要建多个项目。
+**一块画布 = 一个随机链接**（`https://artifact.tianyw0.xyz/c/<id>`）。一个人可以有多块画布；
+画布无限大，靠坐标分区——同一个项目的多屏就多开画框，不要拆成多块画布。
+拿到链接的人只能看，不能改；要改必须登录（`artifact login`）。
 
 ## 建画布 / 新建画框
 
@@ -55,9 +57,11 @@ description: 把品牌、界面、架构图等设计落成静态 HTML 画框，�
 ```bash
 npx @tian-s-org/canvas push                 # 默认推当前目录的 .artifact
 npx @tian-s-org/canvas push ./designs       # 指到别处
-npx @tian-s-org/canvas push --url <地址>     # 别的部署
+npx @tian-s-org/canvas push --canvas <id>   # 推到已有的某块画布
+npx @tian-s-org/canvas list                 # 我有哪些画布（含链接）
 ```
 
+- **第一次 push 会自动新建一块画布**，把它的随机 id 写进目录里的 `.canvas`，并打印链接；之后都推到这一块；
 - 推的是**源文件**：`layout.json`、`context.md`、`artboards/`、`assets/`，目录结构原样；
 - 不编译、不打包、不内联；
 - 单文件 ≤ 8MB，一次 ≤ 200 个文件；

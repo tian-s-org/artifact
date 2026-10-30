@@ -17,11 +17,6 @@ export interface StatePayload {
   filesBase: string
 }
 
-export interface Meta {
-  cloud: boolean
-  gated: boolean
-  canWrite: boolean
-}
 
 export class ApiError extends Error {
   readonly status: number
@@ -50,12 +45,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T
 }
 
-export function fetchMeta(): Promise<Meta> {
-  return request('/api/meta')
+export interface CanvasSummary {
+  id: string
+  name: string
+  at: string
 }
 
-export function fetchState(): Promise<StatePayload> {
-  return request('/api/state')
+export function fetchState(canvasId: string): Promise<StatePayload> {
+  return request(`/api/c/${encodeURIComponent(canvasId)}/state`)
+}
+
+export function fetchCanvases(): Promise<{ canvases: CanvasSummary[] }> {
+  return request('/api/canvases')
 }
 
 /** 画板文件地址：带 ?v=<mtime>，内容不变就不重载 iframe */

@@ -1,5 +1,5 @@
 /**
- * /f/<文件令牌>/<相对路径> —— 画板 iframe 的唯一资源入口。
+ * /f/<文件令牌>/<画布 id>/<相对路径> —— 画板 iframe 的唯一资源入口。
  *
  * 这一路刻意跑在独立源上：没有 cookie、没有 API、不发 layout.json / context.md / versions/。
  * 配合 iframe 的 sandbox="" 和下面这层 CSP，Agent 产出的 HTML 即使带脚本、外链、
@@ -8,6 +8,7 @@
  */
 import type { Env } from './env'
 import { verifyFilesToken } from './auth'
+import { canvasKey } from './canvases'
 import { isServableFile, mimeFor } from './paths'
 import type { R2Storage } from './storage'
 
@@ -51,15 +52,16 @@ export async function handleFile(
     return new Response('method not allowed', { status: 405, headers: BASE_HEADERS })
   }
 
-  const parts = url.pathname.split('/').filter(Boolean) // ['f', token, ...rel]
+  const parts = url.pathname.split('/').filter(Boolean) // ['f', token, canvasId, ...rel]
   const token = parts[1] ?? ''
-  const rel = parts.slice(2).join('/')
+  const canvasId = parts[2] ?? ''
+  const rel = parts.slice(3).join('/')
 
-  if (!(await verifyFilesToken(token, env)) || !isServableFile(rel)) {
+  if (!canvasId || !(await verifyFilesToken(token, env, canvasId)) || !isServableFile(rel)) {
     return new Response('forbidden', { status: 403, headers: BASE_HEADERS })
   }
 
-  const obj = await storage.readFile(rel).catch(() => null)
+  const obj = await storage.readFile(canvasKey(canvasId, rel)).catch(() => null)
   if (!obj) return new Response('not found', { status: 404, headers: BASE_HEADERS })
 
   const type = mimeFor(rel)

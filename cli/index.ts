@@ -24,10 +24,14 @@ const USAGE = `artifact —— 画布命令行
       打开浏览器授权（Google 登录），token 存到 ~/.config/artifact/credentials.json
   artifact logout
       删掉本机 token
-  artifact push [目录] [--url <地址>]
-      把本地 .artifact/ 整包推到云端（默认当前目录的 .artifact）
-  artifact open [--url <地址>]
-      在浏览器里打开画布
+  artifact push [目录] [--canvas <id>] [--url <地址>]
+      把本地 .artifact/ 推到云端；目录里没有 .canvas 就新建一块画布
+  artifact list [--url <地址>]
+      列出我自己的画布（每块一个随机链接）
+  artifact open [--canvas <id>] [--url <地址>]
+      在浏览器里打开画布；不给 id 就打开「我的画布」
+  artifact share [--canvas <id>] [--url <地址>]
+      打印画布的分享链接（只读，拿到链接即可看）
   artifact skill install [--target claude|omp|project|all] [--dir <技能库根>] [--force]
       把「${SKILL_NAME}」技能装进本地 Agent 技能库（默认 claude，all = 所有用户级技能库）
   artifact skill list
@@ -50,7 +54,7 @@ interface Parsed {
 function parse(argv: string[]): Parsed {
   const command: string[] = []
   const flags = new Map<string, string | true>()
-  const valued = new Set(['target', 'dir', 'url', 'key'])
+  const valued = new Set(['target', 'dir', 'url', 'key', 'canvas'])
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i] ?? ''
     if (arg.startsWith('--')) {
@@ -124,21 +128,37 @@ export async function main(argv: string[]): Promise<void> {
     const creds = await readCredentials()
     const url = stringFlag(parsed, 'url') ?? process.env.ARTIFACT_URL ?? creds?.url ?? DEFAULT_URL
 
+    const key = stringFlag(parsed, 'key') ?? process.env.ARTIFACT_KEY ?? creds?.token
+    const base = url.replace(/\/$/, '')
+    const canvasUrl = (id: string): string => `${base}/c/${id}`
+
     if (group === 'login') {
       await login({ url })
     } else if (group === 'logout') {
       await clearCredentials()
       console.log('已删除本机 token')
     } else if (group === 'push') {
-      const key = stringFlag(parsed, 'key') ?? process.env.ARTIFACT_KEY ?? creds?.token
       try {
-        await push({ dir: action, url, key })
+        await push({ dir: action, url, key, canvasId: stringFlag(parsed, 'canvas') })
       } catch (err) {
         if (!key) throw new Error(`${(err as Error).message}（还没登录？先跑 artifact login）`)
         throw err
       }
+    } else if (group === 'list') {
+      if (!key) throw new Error('还没登录：先跑 artifact login')
+      const res = await fetch(`${base}/api/canvases`, { headers: { authorization: `Bearer ${key}` } })
+      if (!res.ok) throw new Error(`读取画布失败（${res.status}）：${await res.text()}`)
+      const data = (await res.json()) as { canvases?: Array<{ id: string; name: string; at: string }> }
+      const list = data.canvases ?? []
+      if (list.length === 0) console.log('还没有画布：artifact push 会自动建一块')
+      for (const canvas of list) console.log(`${canvas.name.padEnd(20)} ${canvasUrl(canvas.id)}`)
+    } else if (group === 'share') {
+      const id = stringFlag(parsed, 'canvas')
+      if (!id) throw new Error('需要 --canvas <id>（artifact list 能看到）')
+      console.log(canvasUrl(id))
     } else if (group === 'open') {
-      openUrl(url)
+      const id = stringFlag(parsed, 'canvas')
+      openUrl(id ? canvasUrl(id) : base)
     } else if (group === 'skill' && action === 'install') {
       process.exitCode = await skillInstall(parsed)
     } else if (group === 'skill' && (action === 'list' || action === undefined)) {

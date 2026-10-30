@@ -10,6 +10,8 @@ import type { Env } from './env'
 import type { R2Storage } from './storage'
 
 export const SESSION_COOKIE = 'artifact_session'
+export const SHARE_COOKIE = 'artifact_share'
+const SHARE_FILE = 'auth/share.json'
 const SESSION_DAYS = 30
 const CODE_TTL_MS = 10 * 60 * 1000
 const TOKEN_PREFIX = 'auth/tokens/'
@@ -155,6 +157,7 @@ export function emailAllowed(email: string, env: Env): boolean {
 
 export interface CliCode {
   redirect: string
+  email: string
   exp: number
 }
 
@@ -164,9 +167,9 @@ function randomHex(bytes: number): string {
   return [...buf].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-export async function createCliCode(storage: R2Storage, redirect: string): Promise<string> {
+export async function createCliCode(storage: R2Storage, redirect: string, email: string): Promise<string> {
   const code = randomHex(16)
-  const payload: CliCode = { redirect, exp: Date.now() + CODE_TTL_MS }
+  const payload: CliCode = { redirect, email, exp: Date.now() + CODE_TTL_MS }
   await storage.writeFile(`${CODE_PREFIX}${code}`, JSON.stringify(payload))
   return code
 }
@@ -179,8 +182,8 @@ export async function consumeCliCode(storage: R2Storage, code: string): Promise<
   await storage.deleteFile(key)
   try {
     const payload = JSON.parse(raw) as CliCode
-    if (typeof payload.redirect !== 'string' || typeof payload.exp !== 'number') return null
-    if (payload.exp < Date.now()) return null
+    if (typeof payload.redirect !== 'string' || typeof payload.email !== 'string') return null
+    if (typeof payload.exp !== 'number' || payload.exp < Date.now()) return null
     return payload
   } catch {
     return null
@@ -196,9 +199,51 @@ export async function createCliToken(storage: R2Storage, email: string): Promise
   return token
 }
 
-export async function verifyCliToken(storage: R2Storage, token: string): Promise<boolean> {
-  if (!/^[a-f0-9]{48}$/.test(token)) return false
-  return storage.exists(`${TOKEN_PREFIX}${await sha256(token)}`)
+/** 校验 CLI token，返回它属于谁 */
+export async function verifyCliToken(storage: R2Storage, token: string): Promise<string | null> {
+  if (!/^[a-f0-9]{48}$/.test(token)) return null
+  const raw = await storage.readText(`${TOKEN_PREFIX}${await sha256(token)}`).catch(() => null)
+  if (raw === null) return null
+  try {
+    const data = JSON.parse(raw) as { email?: unknown }
+    return typeof data.email === 'string' && data.email !== '' ? data.email : null
+  } catch {
+    return null
+  }
+}
+
+/* ---------------- 随机分享地址 ---------------- */
+
+async function readShareId(storage: R2Storage): Promise<string | null> {
+  const raw = await storage.readText(SHARE_FILE).catch(() => null)
+  if (raw === null) return null
+  try {
+    const data = JSON.parse(raw) as { id?: unknown }
+    return typeof data.id === 'string' && /^[a-z0-9]{16,32}$/.test(data.id) ? data.id : null
+  } catch {
+    return null
+  }
+}
+
+/** 没有就生成一个；id 是随机的，改了就旧链接失效 */
+export async function ensureShareId(storage: R2Storage): Promise<string> {
+  const existing = await readShareId(storage)
+  if (existing) return existing
+  const id = randomHex(12)
+  await storage.writeFile(SHARE_FILE, JSON.stringify({ id, at: new Date().toISOString() }))
+  return id
+}
+
+export async function verifyShareId(storage: R2Storage, id: string): Promise<boolean> {
+  const current = await readShareId(storage)
+  if (!current || current.length !== id.length) return false
+  let diff = 0
+  for (let i = 0; i < current.length; i += 1) diff |= current.charCodeAt(i) ^ id.charCodeAt(i)
+  return diff === 0
+}
+
+export function shareCookie(id: string): string {
+  return `${SHARE_COOKIE}=${encodeURIComponent(id)}; Path=/; Max-Age=${SESSION_DAYS * 86400}; HttpOnly; Secure; SameSite=Lax`
 }
 
 /* ---------------- 访问判定 ---------------- */
@@ -215,12 +260,19 @@ export async function checkAccess(request: Request, env: Env, storage: R2Storage
   const session = await readSession(request, env)
   if (session) return { allowed: true, canWrite: true, email: session.email }
 
+  // 随机分享链接进来的人：只读
+  const share = cookieValue(request, SHARE_COOKIE)
+  if (share !== null && (await verifyShareId(storage, share))) {
+    return { allowed: true, canWrite: false, email: null }
+  }
+
   // 没配 Google 就是本地开发模式：全放开
   if (!googleEnabled(env)) return { allowed: true, canWrite: true, email: null }
 
   const token = bearer(request)
-  if (token !== null && (await verifyCliToken(storage, token))) {
-    return { allowed: true, canWrite: true, email: null }
+  if (token !== null) {
+    const email = await verifyCliToken(storage, token)
+    if (email !== null) return { allowed: true, canWrite: true, email }
   }
 
   return { allowed: false, canWrite: false, email: null }
@@ -228,13 +280,13 @@ export async function checkAccess(request: Request, env: Env, storage: R2Storage
 
 /* ---------------- 画板文件令牌 ---------------- */
 
-/** 文件路径里的令牌：一个部署一个画布，令牌稳定；换密钥就全局失效 */
-export async function filesToken(env: Env): Promise<string> {
-  return (await hmac(signingSecret(env), 'artifact-files:canvas')).slice(0, 32)
+/** 文件路径里的令牌：按画布算，换密钥就全局失效 */
+export async function filesToken(env: Env, canvasId: string): Promise<string> {
+  return (await hmac(signingSecret(env), `artifact-files:${canvasId}`)).slice(0, 32)
 }
 
-export async function verifyFilesToken(token: string, env: Env): Promise<boolean> {
-  const expected = await filesToken(env)
+export async function verifyFilesToken(token: string, env: Env, canvasId: string): Promise<boolean> {
+  const expected = await filesToken(env, canvasId)
   if (token.length !== expected.length) return false
   let diff = 0
   for (let i = 0; i < expected.length; i += 1) diff |= token.charCodeAt(i) ^ expected.charCodeAt(i)

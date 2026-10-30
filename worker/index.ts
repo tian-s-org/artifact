@@ -1,11 +1,11 @@
 /**
  * 云端入口。两个域名共用一个 Worker：
  *
- *   artifact.tianyw0.xyz        应用 + /api（Google 登录后可用）
- *   artifact-files.tianyw0.xyz  只发 /f/<令牌>/...（画板的沙箱源）
+ *   artifact.tianyw0.xyz        应用 + /api + /auth + /cli
+ *   artifact-files.tianyw0.xyz  只发 /f/<令牌>/<画布 id>/...（画板的沙箱源）
  *
- * 一个部署一个画布；前端靠 `/api/state` 返回的 filesBase 把画板 iframe 指到文件源上，
- * 变更通知走轮询（Workers 上没有长连接）。
+ * 一块画布一个随机 id：`/c/<id>` 就是它的链接（只读，链接即权限）；
+ * 登录后 `/` 列出自己的画布，可以新建、推送。
  */
 import { handleApi } from './api'
 import {
@@ -81,7 +81,7 @@ export default {
         const code = typeof body.code === 'string' ? body.code : ''
         const payload = await consumeCliCode(storage, code)
         if (!payload) return fail(401, 'invalid-code', '授权码无效或已过期')
-        const token = await createCliToken(storage, 'cli')
+        const token = await createCliToken(storage, payload.email)
         return json(200, { token })
       }
 
@@ -127,9 +127,7 @@ export default {
         if (!infoRes.ok) return fail(401, 'google-user', '拿不到 Google 用户信息')
         const info = (await infoRes.json()) as { email?: string; email_verified?: boolean }
         const email = info.email ?? ''
-        if (!info.email_verified || !emailAllowed(email, env)) {
-          return blockedPage(null)
-        }
+        if (!info.email_verified || !emailAllowed(email, env)) return blockedPage(null)
 
         const cookie = await sessionCookie({ email, exp: sessionExpiry() }, env)
         return redirect(state.redirect.startsWith('/') ? state.redirect : '/', cookie)
@@ -165,22 +163,26 @@ export default {
         const session = await checkAccess(request, env, storage)
         if (!session.allowed || session.email === null) return fail(403, 'login', '需要先登录')
 
-        const code = await createCliCode(storage, payload.redirect)
+        const code = await createCliCode(storage, payload.redirect, session.email)
         return redirect(`${payload.redirect}?code=${code}&state=${encodeURIComponent(payload.state)}`)
       }
 
-      const access = await checkAccess(request, env, storage)
-      if (!access.allowed) {
-        if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
-          return fail(401, 'unauthorized', '需要登录')
-        }
-        return blockedPage(loginUrl(request, env))
+      // 旧的分享地址重定向到新的画布地址
+      if (url.pathname.startsWith('/s/')) {
+        return redirect(`/c/${url.pathname.slice('/s/'.length)}`)
       }
+
+      const access = await checkAccess(request, env, storage)
 
       if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
         return await handleApi(request, url, env, { storage }, access)
       }
 
+      // 画布页面：链接即权限，直接看
+      if (url.pathname.startsWith('/c/')) return withSecurityHeaders(await env.ASSETS.fetch(request))
+
+      // 其它页面（画布列表）：要登录
+      if (!access.allowed) return blockedPage(loginUrl(request, env))
       return withSecurityHeaders(await env.ASSETS.fetch(request))
     } catch (err) {
       return errorResponse(err)

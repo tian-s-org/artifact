@@ -11,8 +11,8 @@ const NOTICE =
 const SCREEN_NOTE =
   'screen-note fixed inset-0 flex flex-col items-center justify-center gap-8 p-24 text-center text-ink-2'
 
-export function CanvasPage() {
-  const { store, state } = useProject()
+export function CanvasPage({ canvasId }: { canvasId: string }) {
+  const { store, state } = useProject(canvasId)
   const boards = useMemo(
     () => boardsToViews(state.layout, state.meta, state.filesBase),
     [state.layout, state.meta, state.filesBase],

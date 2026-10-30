@@ -1,6 +1,7 @@
 # 云端：登录、接口、文件源
 
-一个部署一块画布。地址默认 `https://artifact.tianyw0.xyz`，可用 `--url` 或 `ARTIFACT_URL` 覆盖。
+一块画布一个随机 id，链接是 `https://artifact.tianyw0.xyz/c/<id>`；一个人可以有多块。
+地址默认 `https://artifact.tianyw0.xyz`，可用 `--url` 或 `ARTIFACT_URL` 覆盖。
 
 ## 登录
 
@@ -19,14 +20,16 @@ npx @tian-s-org/canvas logout
 
 ```bash
 BASE=https://artifact.tianyw0.xyz
+C=$BASE/api/c/<画布 id>
 H="authorization: Bearer $ARTIFACT_KEY"
 
-curl -s "$BASE/api/state" -H "$H"                       # layout + 每块画框 mtime + filesBase
-curl -s "$BASE/api/tree" -H "$H"                        # 云端有哪些文件
-curl -s "$BASE/api/file?path=artboards/board-001/index.html" -H "$H"        # 读
-curl -s -X POST "$BASE/api/file?path=layout.json" -H "$H" -H 'content-type: application/json' \
-  -d '{"content":"{…}"}'                                                     # 写
-curl -s -X POST "$BASE/api/files" -H "$H" -H 'content-type: application/json' \
+curl -s "$BASE/api/canvases" -H "$H"                     # 我的画布列表（id / name / 时间）
+curl -s "$C/state"                                       # layout + 每块画框 mtime + filesBase（链接即读权限）
+curl -s "$C/tree" -H "$H"                                # 云端有哪些文件
+curl -s "$C/file?path=artboards/board-001/index.html" -H "$H"        # 读
+curl -s -X POST "$C/file?path=layout.json" -H "$H" -H 'content-type: application/json' \
+  -d '{"content":"{…}"}'                                                    # 写（要所有者）
+curl -s -X POST "$C/files" -H "$H" -H 'content-type: application/json' \
   -d '{"files":[{"path":"artboards/board-001/index.html","content":"<html>…</html>"}]}'   # 整包
 ```
 
@@ -37,9 +40,9 @@ curl -s -X POST "$BASE/api/files" -H "$H" -H 'content-type: application/json' \
 
 ## 文件源
 
-画框 iframe 从独立源加载：`https://artifact-files.tianyw0.xyz/f/<令牌>/<相对路径>`。
+画框 iframe 从独立源加载：`https://artifact-files.tianyw0.xyz/f/<令牌>/<画布 id>/<相对路径>`。
 
-- 令牌由服务端派生（`SESSION_SECRET` / Google client secret 做 HMAC），前端每次读 `/api/state` 都重新拿；
+- 令牌由服务端按画布派生（`SESSION_SECRET` / Google client secret 做 HMAC），前端每次读 `state` 都重新拿；
 - 只发 `artboards/`、`assets/`；`layout.json`、`context.md` 一律 403；
 - 响应带沙箱 CSP（`script-src 'none'`、`connect-src 'none'`），图片/字体允许本项目与 `data:`。
 

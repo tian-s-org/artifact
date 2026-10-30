@@ -99,7 +99,8 @@ wrangler secret put SESSION_SECRET      # 可选
 pnpm deploy                             # vite build + wrangler deploy
 ```
 
-一个部署一块画布；R2 键就是画布里的相对路径（`layout.json`、`artboards/…`、`assets/…`）。
+一块画布一个随机 id；R2 键是 `canvas/<id>/…`（`layout.json`、`artboards/…`、`assets/…`）。
+一个人可以有多块：`artifact list` 列出自己的，`/c/<id>` 是只读分享链接。
 
 ## 仓库结构
 

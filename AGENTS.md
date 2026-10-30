@@ -25,7 +25,8 @@ node cli/artifact.mjs skill install --target all --force
 
 ## 协议要点
 
-- 一个部署一块画布；清单是 `layout.json`（`protocol / id / name / context / boards[]`）
+- 一块画布一个随机 id；清单是 `layout.json`（`protocol / id / name / context / boards[]`）
+- 一个人可以有多块画布：`artifact list` 看自己的，`/c/<id>` 是只读分享链接
 - 画框文件必须是 `artboards/<id>/index.html`；画框可以有自己目录里的 CSS/图片
 - 共享资源放 `assets/{images,fonts,css}/`
 - 没有版本、没有多项目、没有本地 Node 服务

@@ -176,7 +176,8 @@ export default {
       if (!access.allowed && (url.pathname.startsWith('/c/') || url.pathname.startsWith('/api/c/'))) {
         if (url.pathname.startsWith('/api/')) return fail(401, 'unauthorized', '需要登录')
         if (!googleEnabled(env)) return blockedPage(null)
-        return redirect(`/auth/google?redirect=${encodeURIComponent(url.pathname + url.search)}`)
+        // 不自动跳转：先显示「需要登录」，用户点按钮再去 Google
+        return blockedPage(`/auth/google?redirect=${encodeURIComponent(url.pathname + url.search)}`)
       }
 
       if (url.pathname === '/api/me') {

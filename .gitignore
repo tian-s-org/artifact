@@ -13,6 +13,7 @@ tests/.tmp/
 # 发布用：本地 npm 配置里带 token，绝不提交
 .npmrc
 
-# 本地开发用的画布数据（仓库不带示例项目）
+# 本地开发用的画布数据
 projects/
-.artifact/
+# `.artifact/` 里的自举原型要进版本库；只忽略本机的画布绑定
+.canvas

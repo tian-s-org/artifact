@@ -16,14 +16,14 @@ test('只放行三个顶层目录和白名单扩展名', () => {
   for (const rel of allowed) assert.equal(isServableFile(rel), true, rel)
 
   const denied = [
-    'canvas.json',
+    'layout.json',
     'context.md',
     'versions/index.json',
     'design-system/guidelines.md',
     'artboards/board-001/.secret.html',
     'artboards/board-001/app.js',
-    'artboards/../../canvas.json',
-    'artboards/board-001/../../canvas.json',
+    'artboards/../../layout.json',
+    'artboards/board-001/../../layout.json',
     '/artboards/board-001/index.html',
     'artboards//board-001/index.html',
     '',
@@ -53,14 +53,14 @@ test('根目录自己就是项目：singleProjectId 与 projectDir', async () =>
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'artifact-flat-'))
   try {
     await fs.writeFile(
-      path.join(dir, 'canvas.json'),
+      path.join(dir, 'layout.json'),
       JSON.stringify({ protocol: 1, id: 'skillbor', name: 'x', boards: [] }),
     )
-    assert.equal(singleProjectId(dir), 'skillbor', '根下的 canvas.json 就是项目本身')
+    assert.equal(singleProjectId(dir), 'skillbor', '根下的 layout.json 就是项目本身')
     assert.equal(projectDir(dir, 'skillbor'), dir, '项目目录就是根，不再套一层')
     assert.equal(projectDir(dir, 'other'), path.join(dir, 'other'), '别的 id 仍按子目录找')
 
-    await fs.writeFile(path.join(dir, 'canvas.json'), '{oops')
+    await fs.writeFile(path.join(dir, 'layout.json'), '{oops')
     assert.equal(singleProjectId(dir), null, '坏 JSON 不算单项目根')
     assert.equal(projectDir(dir, 'skillbor'), path.join(dir, 'skillbor'))
   } finally {

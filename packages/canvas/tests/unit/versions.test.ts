@@ -25,16 +25,16 @@ function boardPath(dir: string, boardId: string): string {
   return path.join(dir, 'artboards', boardId, 'index.html')
 }
 
-test('save 把画板和 canvas.json 收进内容寻址的 blob', async () => {
+test('save 把画板和 layout.json 收进内容寻址的 blob', async () => {
   await withProject(async ({ dir, store }) => {
     const entry = await store.save('brand', '首版')
     assert.match(entry.id, VERSION_ID_RE)
     assert.equal(entry.note, '首版')
     assert.deepEqual(Object.keys(entry.boards).sort(), ['board-001', 'board-002'])
-    assert.equal(entry.canvas.file, 'canvas.json')
+    assert.equal(entry.canvas.file, 'layout.json')
 
     const blobs = await fs.readdir(path.join(dir, 'versions', 'blobs'))
-    assert.equal(blobs.length, 3, '两块画板 + canvas.json 各一个 blob')
+    assert.equal(blobs.length, 3, '两块画板 + layout.json 各一个 blob')
 
     const index = JSON.parse(await fs.readFile(path.join(dir, 'versions', 'index.json'), 'utf8')) as {
       versions: Array<{ id: string }>
@@ -56,7 +56,7 @@ test('同内容再存一版不会重复写 blob', async () => {
   })
 })
 
-test('只恢复一块画板：内容回旧，其他画板与 canvas.json 不动', async () => {
+test('只恢复一块画板：内容回旧，其他画板与 layout.json 不动', async () => {
   await withProject(async ({ dir, repo, store }) => {
     const saved = await store.save('brand', '改之前')
     const originalOne = await fs.readFile(boardPath(dir, 'board-001'), 'utf8')
@@ -65,25 +65,25 @@ test('只恢复一块画板：内容回旧，其他画板与 canvas.json 不动'
     await fs.writeFile(boardPath(dir, 'board-001'), `${originalOne}<!-- 改过 -->\n`)
     await fs.writeFile(boardPath(dir, 'board-002'), `${originalTwo}<!-- 也改过 -->\n`)
     await repo.updateBoardPosition('brand', 'board-001', 900, 700)
-    const canvasBefore = await fs.readFile(path.join(dir, 'canvas.json'), 'utf8')
+    const canvasBefore = await fs.readFile(path.join(dir, 'layout.json'), 'utf8')
 
     const result = await store.restore('brand', saved.id, { boardId: 'board-001' })
     assert.deepEqual(result.restored, ['board-001'])
     assert.equal(await fs.readFile(boardPath(dir, 'board-001'), 'utf8'), originalOne)
     assert.ok((await fs.readFile(boardPath(dir, 'board-002'), 'utf8')).includes('也改过'), 'board-002 不该被动')
-    assert.equal(await fs.readFile(path.join(dir, 'canvas.json'), 'utf8'), canvasBefore, 'canvas.json 不该被动')
+    assert.equal(await fs.readFile(path.join(dir, 'layout.json'), 'utf8'), canvasBefore, 'layout.json 不该被动')
   })
 })
 
-test('全量恢复会把 canvas.json 一起还原', async () => {
+test('全量恢复会把 layout.json 一起还原', async () => {
   await withProject(async ({ dir, repo, store }) => {
     const saved = await store.save('brand', '排布定稿')
-    const canvas = await fs.readFile(path.join(dir, 'canvas.json'), 'utf8')
+    const canvas = await fs.readFile(path.join(dir, 'layout.json'), 'utf8')
     await repo.updateBoardPosition('brand', 'board-002', 5000, 5000)
-    assert.notEqual(await fs.readFile(path.join(dir, 'canvas.json'), 'utf8'), canvas)
+    assert.notEqual(await fs.readFile(path.join(dir, 'layout.json'), 'utf8'), canvas)
 
     await store.restore('brand', saved.id)
-    assert.equal(await fs.readFile(path.join(dir, 'canvas.json'), 'utf8'), canvas)
+    assert.equal(await fs.readFile(path.join(dir, 'layout.json'), 'utf8'), canvas)
   })
 })
 

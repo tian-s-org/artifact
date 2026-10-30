@@ -8,7 +8,7 @@
  */
 import { CanvasError, isId, parseCanvas } from '@tian-s-org/schema'
 import { projectKey } from './paths'
-import { CANVAS_FILE } from './repo'
+import { LAYOUT_FILE } from './repo'
 import type { R2Storage } from './storage'
 
 export const VERSIONS_INDEX = 'versions/index.json'
@@ -177,12 +177,12 @@ export class CloudVersionStore {
   }
 
   private async snapshot(projectId: string): Promise<{ canvas: SavedFile; boards: Record<string, SavedFile> }> {
-    const text = await this.storage.readText(this.key(projectId, CANVAS_FILE)).catch(() => null)
-    if (text === null) throw new CanvasError('not-found', 'canvas.json 不存在，无法保存版本')
+    const text = await this.storage.readText(this.key(projectId, LAYOUT_FILE)).catch(() => null)
+    if (text === null) throw new CanvasError('not-found', 'layout.json 不存在，无法保存版本')
     const doc = parseCanvas(JSON.parse(text))
     const canvas: SavedFile = {
       hash: await this.putBlob(projectId, new TextEncoder().encode(text)),
-      file: CANVAS_FILE,
+      file: LAYOUT_FILE,
     }
 
     const boards: Record<string, SavedFile> = {}

@@ -39,7 +39,7 @@ function hasBadSegments(rel: string): boolean {
   return rel.split('/').some((s) => s === '' || s === '.' || s === '..' || s.startsWith('.'))
 }
 
-/** /f 能发的文件：三个白名单目录 + 白名单扩展名。canvas.json、context.md、versions/ 一律不发 */
+/** /f 能发的文件：三个白名单目录 + 白名单扩展名。layout.json、context.md、versions/ 一律不发 */
 const SERVABLE_PREFIXES = ['artboards/', 'assets/', 'design-system/'] as const
 
 export function isServableFile(rel: string): boolean {
@@ -48,8 +48,8 @@ export function isServableFile(rel: string): boolean {
   return mimeFor(rel) !== 'application/octet-stream'
 }
 
-/** Agent 能写的文件：白名单目录 + canvas.json / context.md；versions/ 归服务端管，不许手写 */
-const WRITABLE_FIXED = new Set(['canvas.json', 'context.md'])
+/** Agent 能写的文件：白名单目录 + layout.json / context.md；versions/ 归服务端管，不许手写 */
+const WRITABLE_FIXED = new Set(['layout.json', 'context.md'])
 const WRITABLE_PREFIXES = ['artboards/', 'assets/', 'design-system/'] as const
 
 export function isWritableFile(rel: string): boolean {

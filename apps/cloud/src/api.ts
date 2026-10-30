@@ -7,7 +7,7 @@ import { filesToken, type Access } from './auth'
 import type { Env } from './env'
 import { errorResponse, HttpError, json, readJson } from './http'
 import { isWritableFile, mimeFor, projectKey } from './paths'
-import { CANVAS_FILE, type CloudProjectRepository } from './repo'
+import { LAYOUT_FILE, type CloudProjectRepository } from './repo'
 import type { R2Storage } from './storage'
 import { VERSIONS_INDEX, type CloudVersionStore } from './versions'
 
@@ -56,20 +56,20 @@ async function writeOne(
   const data = encodeBody(input.content, input.encoding)
   if (data.byteLength > MAX_FILE_BYTES) throw new HttpError(413, 'too-large', `文件太大（上限 8MB）：${rel}`)
 
-  if (options.projectMustExist && rel !== CANVAS_FILE) {
-    if (!(await ctx.storage.exists(projectKey(projectId, CANVAS_FILE)))) {
+  if (options.projectMustExist && rel !== LAYOUT_FILE) {
+    if (!(await ctx.storage.exists(projectKey(projectId, LAYOUT_FILE)))) {
       throw new HttpError(404, 'not-found', `项目不存在：${projectId}`)
     }
   }
-  if (rel === CANVAS_FILE) {
+  if (rel === LAYOUT_FILE) {
     let doc
     try {
       doc = parseCanvas(JSON.parse(new TextDecoder().decode(data)))
     } catch (err) {
       if (err instanceof CanvasError) throw new HttpError(400, err.code, err.message)
-      throw new HttpError(400, 'invalid', 'canvas.json 不是合法 JSON')
+      throw new HttpError(400, 'invalid', 'layout.json 不是合法 JSON')
     }
-    if (doc.id !== projectId) throw new HttpError(400, 'invalid', `canvas.json 的 id（${doc.id}）和项目 id 不一致`)
+    if (doc.id !== projectId) throw new HttpError(400, 'invalid', `layout.json 的 id（${doc.id}）和项目 id 不一致`)
   }
 
   await ctx.storage.writeFile(projectKey(projectId, rel), data)
@@ -131,7 +131,7 @@ export async function handleApi(
         const version = await ctx.storage.getVersion(projectKey(projectId, board.file))
         boards.push({ id: board.id, mtime: version?.mtime ?? 0, exists: version !== null })
       }
-      const canvasVersion = await ctx.storage.getVersion(projectKey(projectId, CANVAS_FILE))
+      const canvasVersion = await ctx.storage.getVersion(projectKey(projectId, LAYOUT_FILE))
       const versionsVersion = await ctx.storage.getVersion(projectKey(projectId, VERSIONS_INDEX))
       const token = await filesToken(projectId, env)
       return json(200, {
@@ -251,7 +251,7 @@ export async function handleApi(
       if (!Array.isArray(body.files) || body.files.length === 0) throw new HttpError(400, 'invalid', '缺少 files 数组')
       if (body.files.length > MAX_IMPORT_FILES) throw new HttpError(413, 'too-many', `一次最多 ${MAX_IMPORT_FILES} 个文件`)
 
-      const exists = await ctx.storage.exists(projectKey(projectId, CANVAS_FILE))
+      const exists = await ctx.storage.exists(projectKey(projectId, LAYOUT_FILE))
       if (!exists) {
         if (body.createProject !== true) throw new HttpError(404, 'not-found', `项目不存在：${projectId}`)
         const name = typeof body.name === 'string' && body.name.trim() !== '' ? body.name.trim() : projectId

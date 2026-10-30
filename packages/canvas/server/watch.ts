@@ -106,7 +106,7 @@ export class ProjectWatcher {
 
     for (const [projectId, rels] of touchedProjects) {
       const dir = projectDir(this.root, projectId)
-      if (rels.has('canvas.json')) {
+      if (rels.has('layout.json')) {
         await this.handleCanvas(projectId)
         continue
       }
@@ -157,7 +157,7 @@ export class ProjectWatcher {
 
   private async handleCanvas(projectId: string): Promise<void> {
     const prev = this.snapshots.get(projectId)
-    const file = path.join(projectDir(this.root, projectId), 'canvas.json')
+    const file = path.join(projectDir(this.root, projectId), 'layout.json')
     const mtime = await this.mtimeOfAbs(file)
     let doc: CanvasDoc
     try {

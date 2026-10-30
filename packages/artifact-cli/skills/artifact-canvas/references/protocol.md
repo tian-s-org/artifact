@@ -4,7 +4,7 @@
 
 ```
 <项目>/.artifact/             一个目录就是一个画布
-├── canvas.json               画布元数据（唯一入口）
+├── layout.json               画布元数据（唯一入口）
 ├── context.md                项目背景，给 agent 读
 ├── assets/{fonts,images}/    画板引用的本地资源
 ├── design-system/            可选：共享 CSS 等普通文件，协议不引用它
@@ -12,9 +12,9 @@
 ```
 
 `design-system/` 只是普通目录：想给画板共享样式就放 CSS，画板用相对路径引用。
-如果用户要「设计规范」，把它**画成一块画板**，不要写进 `canvas.json`。
+如果用户要「设计规范」，把它**画成一块画板**，不要写进 `layout.json`。
 
-## canvas.json
+## layout.json
 
 ```json
 {

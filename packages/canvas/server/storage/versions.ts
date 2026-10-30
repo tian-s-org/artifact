@@ -5,7 +5,7 @@
  *   versions/blobs/<sha256 16>   文件原样字节，同内容只存一份
  *
  * 恢复前先自动存一份 auto 备份，恢复只写目标画板的文件（指定 boardId 时连
- * canvas.json 都不动），所以「恢复画板 A」不会碰到画板 B。
+ * layout.json 都不动），所以「恢复画板 A」不会碰到画板 B。
  */
 import { createHash } from 'node:crypto'
 import fs from 'node:fs/promises'
@@ -13,7 +13,7 @@ import path from 'node:path'
 import { CanvasError, isId, parseCanvas } from '@tian-s-org/schema'
 import { projectDir, resolveInside } from '../paths'
 import { withProjectLock } from './locks'
-import { CANVAS_FILE } from './project-repo'
+import { LAYOUT_FILE } from './project-repo'
 
 export const VERSIONS_DIR = 'versions'
 export const VERSIONS_INDEX = 'versions/index.json'
@@ -196,17 +196,17 @@ export class FsVersionStore {
     })
   }
 
-  /** 把当前 canvas.json 与各画板文件收进 blob；同内容不重复写 */
+  /** 把当前 layout.json 与各画板文件收进 blob；同内容不重复写 */
   private async snapshot(dir: string): Promise<{ canvas: SavedFile; boards: Record<string, SavedFile> }> {
-    const canvasFile = resolveInside(dir, CANVAS_FILE)
+    const canvasFile = resolveInside(dir, LAYOUT_FILE)
     let text: string
     try {
       text = await fs.readFile(canvasFile, 'utf8')
     } catch {
-      throw new CanvasError('not-found', 'canvas.json 不存在，无法保存版本')
+      throw new CanvasError('not-found', 'layout.json 不存在，无法保存版本')
     }
     const doc = parseCanvas(JSON.parse(text))
-    const canvas: SavedFile = { hash: await this.putBlob(dir, Buffer.from(text, 'utf8')), file: CANVAS_FILE }
+    const canvas: SavedFile = { hash: await this.putBlob(dir, Buffer.from(text, 'utf8')), file: LAYOUT_FILE }
 
     const boards: Record<string, SavedFile> = {}
     for (const board of doc.boards) {

@@ -3,7 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import path from 'node:path'
 import { isId } from '@tian-s-org/schema'
 import type { FsStorageProvider } from '../storage/fs-storage'
-import { CANVAS_FILE } from '../storage/project-repo'
+import { LAYOUT_FILE } from '../storage/project-repo'
 import type { EventProvider, ProjectRepository } from '../storage/types'
 import { VERSIONS_INDEX, type FsVersionStore } from '../storage/versions'
 import { fail, HttpError, json, readJson, toHttpError } from './respond'
@@ -79,7 +79,7 @@ export async function handleApi(
         const version = await ctx.storage.getVersion(path.posix.join(projectId, board.file))
         boards.push({ id: board.id, mtime: version?.mtime ?? 0, exists: version !== null })
       }
-      const canvasVersion = await ctx.storage.getVersion(path.posix.join(projectId, CANVAS_FILE))
+      const canvasVersion = await ctx.storage.getVersion(path.posix.join(projectId, LAYOUT_FILE))
       const versionsVersion = await ctx.storage.getVersion(path.posix.join(projectId, VERSIONS_INDEX))
       json(res, 200, {
         canvas,

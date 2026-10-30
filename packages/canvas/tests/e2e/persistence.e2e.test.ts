@@ -1,5 +1,5 @@
 /**
- * 布局持久化：拖动画板 → 写回 canvas.json → 刷新后从磁盘恢复。
+ * 布局持久化：拖动画板 → 写回 layout.json → 刷新后从磁盘恢复。
  * 同时盯住「拖画板不动视口」这条容易回归的行为。
  */
 import assert from 'node:assert/strict'
@@ -32,7 +32,7 @@ interface CanvasJson {
 }
 
 function readCanvas(projectsRoot: string): CanvasJson {
-  const file = path.join(projectsRoot, PROJECT.id, 'canvas.json')
+  const file = path.join(projectsRoot, PROJECT.id, 'layout.json')
   return JSON.parse(fs.readFileSync(file, 'utf8')) as CanvasJson
 }
 
@@ -45,7 +45,7 @@ async function waitForDisk(
   for (;;) {
     const board = readCanvas(projectsRoot).boards.find((b) => b.id === boardId)
     if (board && predicate(board)) return board
-    if (Date.now() > deadline) throw new Error(`canvas.json 没有在 8 秒内更新：${JSON.stringify(board)}`)
+    if (Date.now() > deadline) throw new Error(`layout.json 没有在 8 秒内更新：${JSON.stringify(board)}`)
     await new Promise((resolve) => setTimeout(resolve, 100))
   }
 }
@@ -54,7 +54,7 @@ test('布局持久化 E2E', async (t) => {
   const server = await startServer([PROJECT])
   const browser = await launch('chromium')
   try {
-    await t.test('拖动画板写回 canvas.json，刷新后位置还在', async () => {
+    await t.test('拖动画板写回 layout.json，刷新后位置还在', async () => {
       const page = await browser.newPage({ viewport: VIEW })
       await page.goto(`${server.baseUrl}/p/${PROJECT.id}`)
       await waitForBoards(page, 2)
@@ -94,8 +94,8 @@ test('布局持久化 E2E', async (t) => {
       )
       const moved = positions.find((p) => p.id === 'board-001')
       assert.ok(moved, '刷新后找不到 board-001')
-      assert.equal(moved.x, saved.x, '刷新后 x 应从 canvas.json 恢复')
-      assert.equal(moved.y, saved.y, '刷新后 y 应从 canvas.json 恢复')
+      assert.equal(moved.x, saved.x, '刷新后 x 应从 layout.json 恢复')
+      assert.equal(moved.y, saved.y, '刷新后 y 应从 layout.json 恢复')
       await page.close()
     })
 

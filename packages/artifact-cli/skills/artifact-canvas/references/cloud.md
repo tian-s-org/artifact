@@ -18,5 +18,5 @@ curl -s -X POST "$BASE/file" -H "$H" -H 'content-type: application/json' \
   `POST "$BASE/file?path=…&op=delete"`。
 - 二进制（图片、字体）用 `{"content":"<base64>","encoding":"base64"}`。
 - 新建画板：先 `POST /api/projects/<pid>/boards`，再写它的 `index.html`。
-- 写 `canvas.json` 时它的 `id` 必须等于项目 id，否则 400。
+- 写 `layout.json` 时它的 `id` 必须等于项目 id，否则 400。
 - 云端靠轮询（约 2.5 秒）刷新，写完稍等一下再看画布。

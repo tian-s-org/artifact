@@ -7,7 +7,7 @@
  *   pnpm versions restore brand v20261029-073000
  *   pnpm versions restore brand v20261029-073000 --board board-001
  *
- * 只恢复单块画板时不会动 canvas.json 和其他画板；恢复前会自动存一份备份。
+ * 只恢复单块画板时不会动 layout.json 和其他画板；恢复前会自动存一份备份。
  */
 import path from 'node:path'
 import { isId } from '@tian-s-org/schema'
@@ -85,9 +85,9 @@ async function main(): Promise<void> {
     if (!extra) usage('restore 需要版本 id')
     const result = await store.restore(projectId, extra, boardId ? { boardId } : {})
     console.log(`已恢复到 ${result.version.id}（${result.version.note}）`)
-    console.log(`  写回画板  ${result.restored.join(', ') || '（只恢复了 canvas.json）'}`)
+    console.log(`  写回画板  ${result.restored.join(', ') || '（只恢复了 layout.json）'}`)
     console.log(`  恢复前备份  ${result.backupId}`)
-    if (boardId) console.log('  只动了这一块画板，canvas.json 与其他画板保持原样。')
+    if (boardId) console.log('  只动了这一块画板，layout.json 与其他画板保持原样。')
     return
   }
 

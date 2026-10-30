@@ -44,16 +44,16 @@ test('画板 HTML 变化只广播 board:changed，并带上 mtime', async () => 
   }
 })
 
-test('canvas.json 变化广播 canvas:changed，并按差异补 board:added / board:removed', async () => {
+test('layout.json 变化广播 canvas:changed，并按差异补 board:added / board:removed', async () => {
   const { root, repo, events, watcher } = await setup()
   try {
     await repo.createProject({ id: 'brand', name: 'Northstar' })
     await repo.addBoard('brand', { id: 'board-001', name: 'A' })
-    await watcher.flushForTest(['brand/canvas.json']) // 第一轮只建立快照
+    await watcher.flushForTest(['brand/layout.json']) // 第一轮只建立快照
     events.length = 0
 
     await repo.addBoard('brand', { id: 'board-002', name: 'B' })
-    await watcher.flushForTest(['brand/canvas.json'])
+    await watcher.flushForTest(['brand/layout.json'])
     assert.deepEqual(
       events.map((e) => e.type),
       ['board:added', 'canvas:changed'],
@@ -61,7 +61,7 @@ test('canvas.json 变化广播 canvas:changed，并按差异补 board:added / bo
 
     events.length = 0
     await repo.updateProject('brand', (doc) => ({ ...doc, boards: doc.boards.filter((b) => b.id !== 'board-001') }))
-    await watcher.flushForTest(['brand/canvas.json'])
+    await watcher.flushForTest(['brand/layout.json'])
     assert.deepEqual(
       events.map((e) => e.type),
       ['board:removed', 'canvas:changed'],
@@ -72,13 +72,13 @@ test('canvas.json 变化广播 canvas:changed，并按差异补 board:added / bo
   }
 })
 
-test('坏 canvas.json 广播 project:error，不崩监听', async () => {
+test('坏 layout.json 广播 project:error，不崩监听', async () => {
   const { root, repo, events, watcher } = await setup()
   try {
     await repo.createProject({ id: 'brand', name: 'Northstar' })
-    await fs.writeFile(path.join(root, 'brand', 'canvas.json'), '{ broken')
+    await fs.writeFile(path.join(root, 'brand', 'layout.json'), '{ broken')
     events.length = 0
-    await watcher.flushForTest(['brand/canvas.json'])
+    await watcher.flushForTest(['brand/layout.json'])
     assert.equal(events[0]?.type, 'project:error')
   } finally {
     watcher.close()
@@ -95,7 +95,7 @@ test('临时文件、点开头目录、node_modules 不触发任何事件', asyn
       'brand/artboards/board-001/.tmp-abc123',
       'brand/.DS_Store',
       'brand/node_modules/foo/index.html',
-      'brand/canvas.json.tmp-1',
+      'brand/layout.json.tmp-1',
       'README.md',
     ])
     assert.deepEqual(events, [])
@@ -131,7 +131,7 @@ test('根目录自己就是项目时，相对路径里没有项目 id 那一段'
   const { root, events, watcher } = await setup()
   try {
     await fs.writeFile(
-      path.join(root, 'canvas.json'),
+      path.join(root, 'layout.json'),
       JSON.stringify({ protocol: 1, id: 'skillbor', name: 'skillbor', boards: [] }),
     )
     const board = path.join(root, 'artboards/board-001/index.html')

@@ -29,7 +29,7 @@ function sampleDoc(overrides: Record<string, unknown> = {}): Record<string, unkn
   return { ...emptyCanvas('brand', 'Northstar 品牌'), boards: [sampleBoard()], ...overrides }
 }
 
-test('合法 canvas.json 通过解析，未知字段原样保留', () => {
+test('合法 layout.json 通过解析，未知字段原样保留', () => {
   const raw = sampleDoc({ future: { a: 1 }, boards: [{ ...sampleBoard(), layerLabels: ['x'] }] })
   const doc = parseCanvas(raw)
   assert.equal(doc.id, 'brand')
@@ -52,7 +52,7 @@ test('协议版本不认识时给出 unsupported-protocol', () => {
 })
 
 test('画板文件必须落在 artboards/<id>/index.html', () => {
-  for (const file of ['../canvas.json', 'artboards/board-001/main.html', '/etc/passwd', 'board-001/index.html']) {
+  for (const file of ['../layout.json', 'artboards/board-001/main.html', '/etc/passwd', 'board-001/index.html']) {
     assert.throws(() => parseCanvas(sampleDoc({ boards: [sampleBoard({ file })] })), CanvasError, file)
   }
 })

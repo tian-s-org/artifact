@@ -1,5 +1,5 @@
 /**
- * canvas.json 的协议定义与校验。前端与服务端共用同一份：
+ * layout.json 的协议定义与校验。前端与服务端共用同一份：
  * 服务端写盘前用它兜底，前端读到坏数据时用它判断「停在上一份好数据」。
  *
  * 解析只校验、不改写——未知字段原样保留，方便协议往后加东西而不破坏旧客户端。
@@ -87,7 +87,7 @@ function parseBoard(raw: unknown, index: number): BoardSpec {
 
 /** 严格版：不合法直接抛 CanvasError */
 export function parseCanvas(raw: unknown): CanvasDoc {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) fail('invalid', 'canvas.json 顶层必须是对象')
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) fail('invalid', 'layout.json 顶层必须是对象')
   const doc = raw as Record<string, unknown>
   const protocol = requireFinite(doc, 'protocol')
   if (protocol !== PROTOCOL_VERSION) fail('unsupported-protocol', `协议版本 ${protocol} 不受支持（当前支持 ${PROTOCOL_VERSION}）`)
@@ -115,7 +115,7 @@ export function safeParseCanvas(text: string): ParseResult {
   try {
     raw = JSON.parse(text)
   } catch (err) {
-    return { ok: false, error: { code: 'invalid-json', message: `canvas.json 不是合法 JSON：${(err as Error).message}` } }
+    return { ok: false, error: { code: 'invalid-json', message: `layout.json 不是合法 JSON：${(err as Error).message}` } }
   }
   try {
     return { ok: true, doc: parseCanvas(raw) }

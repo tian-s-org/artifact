@@ -152,7 +152,7 @@ test('隔离与安全 E2E', async (t) => {
       await page.goto(`${server.baseUrl}/p/${PROJECT.id}`)
       const statuses = await page.evaluate(async () => {
         const targets = [
-          '/files/e2e-isolation/canvas.json',
+          '/files/e2e-isolation/layout.json',
           '/files/e2e-isolation/context.md',
           '/files/e2e-isolation/versions/index.json',
           '/files/e2e-isolation/artboards/board-001/index.html',
@@ -161,7 +161,7 @@ test('隔离与安全 E2E', async (t) => {
         for (const target of targets) out[target] = (await fetch(target)).status
         return out
       })
-      assert.equal(statuses['/files/e2e-isolation/canvas.json'], 403)
+      assert.equal(statuses['/files/e2e-isolation/layout.json'], 403)
       assert.equal(statuses['/files/e2e-isolation/context.md'], 403)
       assert.equal(statuses['/files/e2e-isolation/versions/index.json'], 403)
       assert.equal(statuses['/files/e2e-isolation/artboards/board-001/index.html'], 200)

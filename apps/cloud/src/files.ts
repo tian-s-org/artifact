@@ -1,7 +1,7 @@
 /**
  * /f/<项目 id>/<文件令牌>/<相对路径> —— 画板 iframe 的唯一资源入口。
  *
- * 这一路刻意跑在独立源上：没有 cookie、没有 API、不发 canvas.json / context.md / versions/。
+ * 这一路刻意跑在独立源上：没有 cookie、没有 API、不发 layout.json / context.md / versions/。
  * 配合 iframe 的 sandbox="" 和下面这层 CSP，Agent 产出的 HTML 即使带脚本、外链、
  * 发请求的代码，也既碰不到画布页面，也发不出任何请求。
  * 文件令牌在路径里，所以画板里的相对资源（../../assets/x.png）自动带着它。

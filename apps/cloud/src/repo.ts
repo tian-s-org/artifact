@@ -1,8 +1,8 @@
 /**
- * ProjectRepository 的 R2 实现，语义与本地版一致：读-改-写 canvas.json，
+ * ProjectRepository 的 R2 实现，语义与本地版一致：读-改-写 layout.json，
  * 新建项目写骨架文件，新建画板自动摆到现有画板右侧。
  *
- * 云端没有本地那套进程内写队列；并发写同一份 canvas.json 时后写的赢，
+ * 云端没有本地那套进程内写队列；并发写同一份 layout.json 时后写的赢，
  * 与「最后一次拖拽算数」的直觉一致。
  */
 import {
@@ -20,7 +20,7 @@ import { CONTEXT_TEMPLATE, boardSkeleton } from '@tian-s-org/schema'
 import { projectKey } from './paths'
 import type { R2Storage } from './storage'
 
-export const CANVAS_FILE = 'canvas.json'
+export const LAYOUT_FILE = 'layout.json'
 
 export class ProjectNotFoundError extends Error {
   readonly code = 'not-found'
@@ -58,13 +58,13 @@ export class CloudProjectRepository {
 
   private async readDoc(projectId: string): Promise<CanvasDoc> {
     this.assertId(projectId)
-    const text = await this.storage.readText(projectKey(projectId, CANVAS_FILE)).catch(() => null)
+    const text = await this.storage.readText(projectKey(projectId, LAYOUT_FILE)).catch(() => null)
     if (text === null) throw new ProjectNotFoundError(projectId)
     return parseCanvas(JSON.parse(text))
   }
 
   private async writeDoc(projectId: string, doc: CanvasDoc): Promise<void> {
-    await this.storage.writeFile(projectKey(projectId, CANVAS_FILE), formatCanvas(doc))
+    await this.storage.writeFile(projectKey(projectId, LAYOUT_FILE), formatCanvas(doc))
   }
 
   async listProjects(): Promise<ProjectSummary[]> {
@@ -78,7 +78,7 @@ export class CloudProjectRepository {
     for (const id of ids) {
       if (!isId(id)) continue
       try {
-        const version = await this.storage.getVersion(projectKey(id, CANVAS_FILE))
+        const version = await this.storage.getVersion(projectKey(id, LAYOUT_FILE))
         if (!version) continue
         const doc = await this.readDoc(id)
         out.push({ id: doc.id, name: doc.name, boardCount: doc.boards.length, mtime: version.mtime })
@@ -93,7 +93,7 @@ export class CloudProjectRepository {
     const { id, name } = input
     this.assertId(id)
     if (typeof name !== 'string' || name.trim() === '') throw new CanvasError('invalid', '项目名称不能为空')
-    if (await this.storage.exists(projectKey(id, CANVAS_FILE))) throw new ProjectExistsError(id)
+    if (await this.storage.exists(projectKey(id, LAYOUT_FILE))) throw new ProjectExistsError(id)
     const doc = emptyCanvas(id, name)
     await this.writeDoc(id, doc)
     await this.writeIfAbsent(id, 'context.md', CONTEXT_TEMPLATE)

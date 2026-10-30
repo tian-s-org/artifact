@@ -172,7 +172,7 @@ test('版本管理 E2E', async (t) => {
     await t.test('只恢复单块画板：另一块保持改动后的样子', async () => {
       const fileOne = boardFile(server.projectsRoot, 'board-001')
       const fileTwo = boardFile(server.projectsRoot, 'board-002')
-      const canvasFile = path.join(projectDir(server.projectsRoot), 'canvas.json')
+      const canvasFile = path.join(projectDir(server.projectsRoot), 'layout.json')
 
       fs.writeFileSync(fileOne, EDITED_ONE)
       fs.writeFileSync(fileTwo, EDITED_TWO)
@@ -194,7 +194,7 @@ test('版本管理 E2E', async (t) => {
       const two = fs.readFileSync(fileTwo, 'utf8')
       assert.equal(two, ORIGINAL_TWO, '画板二应回到保存时的内容')
       assert.match(fs.readFileSync(fileOne, 'utf8'), /改过/, '只恢复画板二时画板一的改动必须留着')
-      assert.equal(fs.readFileSync(canvasFile, 'utf8'), canvasBefore, '只恢复画板不该重写 canvas.json')
+      assert.equal(fs.readFileSync(canvasFile, 'utf8'), canvasBefore, '只恢复画板不该重写 layout.json')
 
       const index = readIndex(server.projectsRoot)
       assert.equal(index[0]!.note, '恢复前自动备份')

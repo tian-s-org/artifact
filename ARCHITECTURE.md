@@ -11,7 +11,7 @@ Agent 把设计写成静态 HTML 画板，`push` 到云端；浏览器打开一�
 
 ```
 一个画布 = 一个目录
-├── canvas.json                 画框清单（位置、尺寸、名字、文件）
+├── layout.json                 画框清单（位置、尺寸、名字、文件）
 ├── artboards/<id>/index.html   设计本体（静态 HTML，无脚本）
 ├── assets/{images,fonts}/
 └── design-system/              可选：共享 CSS 等普通文件（协议不引用它）
@@ -36,7 +36,7 @@ agent ──artifact push──▶ /api/file(s) ──▶ R2        │
 
 - **app 域**：SPA + `/api`，`SITE_KEY` 门禁（`?k=` 换 Cookie；脚本用 Bearer）。
 - **files 域**：只发 `/f/<令牌>/<相对路径>`，画板 iframe 的来源；沙箱 CSP。
-- **刷新**：轮询 `/api/state`（canvas.json + 每块画板 mtime），变化才换 iframe。
+- **刷新**：轮询 `/api/state`（layout.json + 每块画板 mtime），变化才换 iframe。
 - **写操作一律 `POST`**：Cloudflare 边缘会挡 `PUT`/`PATCH`/`DELETE`；接口路径别带 `config`（WAF）。
 
 ## 4. 需求
@@ -62,7 +62,7 @@ agent ──artifact push──▶ /api/file(s) ──▶ R2        │
 | `artifact push` | 本地目录整包上传；**直接传源文件，不编译** |
 | 单文件接口 | `GET/POST /api/file`；删用 `?op=delete` |
 | 文件树 | `GET /api/tree`，agent 看云端有什么 |
-| 新建画框 | 改 `canvas.json` + 建 `artboards/<id>/index.html` |
+| 新建画框 | 改 `layout.json` + 建 `artboards/<id>/index.html` |
 | 限制 | 单文件 ≤ 8MB、单包 ≤ 200 文件 |
 
 ### 4.3 云端运行时
@@ -70,7 +70,7 @@ agent ──artifact push──▶ /api/file(s) ──▶ R2        │
 | 需求 | 说明 |
 | --- | --- |
 | 单画布 | R2 前缀固定（如 `canvas/`），不再有 `<pid>/` |
-| 状态接口 | `GET /api/state` → canvas.json + 每块画板 mtime |
+| 状态接口 | `GET /api/state` → layout.json + 每块画板 mtime |
 | 轮询 | 约 2.5 秒；Workers 不做长连 SSE |
 | 二进制 | base64 编码写入 |
 
@@ -78,7 +78,7 @@ agent ──artifact push──▶ /api/file(s) ──▶ R2        │
 
 1. 画板 iframe 永远 `sandbox=""`，**永不加** `allow-same-origin`。
 2. 画板 CSP：`script-src 'none'`、`connect-src 'none'`，只放行文件源与 `data:`。
-3. `/files` 只发 `artboards/`、`assets/`、`design-system/`；`canvas.json`、`context.md` 一律 403。
+3. `/files` 只发 `artboards/`、`assets/`、`design-system/`；`layout.json`、`context.md` 一律 403。
 4. 写接口需要 Bearer；app 页面需要 `SITE_KEY` 门禁。
 5. 密钥只放 `.dev.vars`（gitignore）或 `wrangler secret`，不进代码、文档、提交。
 
@@ -94,7 +94,7 @@ artifact skill install    # 装技能
 
 ## 5. push 的语义
 
-- **push 的是源文件**：HTML / CSS / SVG / 图片 / 字体 / `canvas.json`，目录结构原样。
+- **push 的是源文件**：HTML / CSS / SVG / 图片 / 字体 / `layout.json`，目录结构原样。
 - **不做构建**：没有打包、没有转译、没有内联。文件源支持多文件，所以不需要像 Claude Artifact 那样把一切塞进一个 HTML。
 - **画板不是 React**：画板运行在 `sandbox=""` 里，脚本不执行；React 只存在于画布壳。
 - **画布壳才用 React**：Vite 构建成静态产物，由维护者 `wrangler deploy` 到 Cloudflare Assets——这不是 agent 的 push。

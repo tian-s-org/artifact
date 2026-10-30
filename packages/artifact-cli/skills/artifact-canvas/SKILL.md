@@ -13,7 +13,7 @@ description: 把品牌、界面、架构图等设计落成静态 HTML 画板，�
 ## 开工清单
 
 - [ ] 底座装了吗：`npx --no-install artifact-cli --version`
-- [ ] 建项目目录：没有 `<项目>/.artifact/` 就照 `assets/canvas.json`、`assets/board.html` 抄
+- [ ] 建项目目录：没有 `<项目>/.artifact/` 就照 `assets/layout.json`、`assets/board.html` 抄
 - [ ] 画布在跑吗：`curl -sf http://127.0.0.1:4330/api/projects`
 - [ ] 没跑就后台起，轮询就绪后 `open` 页面
 - [ ] 画完自检：`node scripts/validate.mjs <项目根>`
@@ -21,7 +21,7 @@ description: 把品牌、界面、架构图等设计落成静态 HTML 画板，�
 ## 目录
 
 ```
-<项目>/.artifact/canvas.json                  画板摆在哪、叫什么、多大
+<项目>/.artifact/layout.json                  画板摆在哪、叫什么、多大
 <项目>/.artifact/artboards/<画板>/index.html   设计本体
 <项目>/.artifact/assets/                      画板引用的图片、字体
 ```
@@ -78,7 +78,7 @@ open http://127.0.0.1:4330                    # 项目列表；/p/<项目 id> �
 
 照模板抄，别自己发明结构：
 
-- `assets/canvas.json`：最小 `canvas.json`（含一块画板），改 `id`、`name`，`boards` 可以留空。
+- `assets/layout.json`：最小 `layout.json`（含一块画板），改 `id`、`name`，`boards` 可以留空。
 - `assets/board.html`：画板骨架（满屏、CSS 变量、无脚本），复制到 `artboards/<画板 id>/index.html` 再改内容。
 
 新建画板就在 `boards` 里加一项，再建对应文件：
@@ -89,7 +89,7 @@ open http://127.0.0.1:4330                    # 项目列表；/p/<项目 id> �
 ```
 
 `id` 同时是目录名（小写字母、数字、连字符）。摆位：原点左上，x 向右、y 向下，单位画布像素；同组方案并排，间隔 160px 以上，别重叠。
-画布只读，位置只由 `canvas.json` 决定——挪画板就是改这里的 `x`/`y`。
+画布只读，位置只由 `layout.json` 决定——挪画板就是改这里的 `x`/`y`。
 
 仓库里调试时可 `pnpm new-board <项目> "<画板名>"`，它自动登记并写骨架。
 
@@ -106,7 +106,7 @@ open http://127.0.0.1:4330                    # 项目列表；/p/<项目 id> �
 - **不引用外网**：画板文档的 CSP 只允许本机地址与 `data:`，CDN 字体、外链图片都会被拦。
 - 资源用相对路径：`../../assets/images/…`、`../../assets/fonts/…`、`../../design-system/…`。
 - 放大要清楚：矢量 SVG、真文本、1px 边框；不用位图截图，不把整页包在 `transform: scale()` 里。
-- 尺寸以 `canvas.json` 的 `width`/`height` 为准，HTML 铺满（`body { margin:0; height:100vh }`）。
+- 尺寸以 `layout.json` 的 `width`/`height` 为准，HTML 铺满（`body { margin:0; height:100vh }`）。
 
 ## 版本
 
@@ -118,13 +118,13 @@ pnpm versions list <项目>
 pnpm versions restore <项目> <版本 id> [--board board-001]
 ```
 
-只有 `--board` 时只写那一块画板，`canvas.json` 与其他画板都不动；恢复前自动备份当前状态。
+只有 `--board` 时只写那一块画板，`layout.json` 与其他画板都不动；恢复前自动备份当前状态。
 
 ## 禁止
 
 - 不给画布加编辑能力（绘图、图层、属性面板、画板内编辑）——这是产品边界。
 - 不手改 `versions/`（blob 是内容寻址的，改了就对不上）。
-- 不把 `canvas.json`、`context.md`、`versions/` 当画板资源引用——`/files` 对它们返回 403。
+- 不把 `layout.json`、`context.md`、`versions/` 当画板资源引用——`/files` 对它们返回 403。
 
 ## 云端
 
@@ -133,7 +133,7 @@ pnpm versions restore <项目> <版本 id> [--board board-001]
 
 ## 自检
 
-画完在技能目录里跑，它会校验 `canvas.json` 的字段和每块画板的文件：
+画完在技能目录里跑，它会校验 `layout.json` 的字段和每块画板的文件：
 
 ```bash
 node scripts/validate.mjs <项目根>
@@ -141,4 +141,4 @@ node scripts/validate.mjs <项目根>
 
 ## 细节
 
-`canvas.json` 的字段规则、校验错误码、版本目录结构：改字段或数据可疑时读 `references/protocol.md`。
+`layout.json` 的字段规则、校验错误码、版本目录结构：改字段或数据可疑时读 `references/protocol.md`。

@@ -7,7 +7,7 @@ Agent（Claude Code）在项目目录里直接写设计文件，画布只负责�
 
 ```
 <你的项目>/.artifact/artboards/<画板>/index.html   ← Agent 写这里
-<你的项目>/.artifact/canvas.json                   ← 画板摆在哪、叫什么、多大
+<你的项目>/.artifact/layout.json                   ← 画板摆在哪、叫什么、多大
 ```
 
 改完存盘，正在开着的画布自己换那一块，不刷新整页、不打断缩放。
@@ -23,7 +23,7 @@ Agent（Claude Code）在项目目录里直接写设计文件，画布只负责�
 | 技能安装 | `packages/artifact-cli`，包名 `@tian-s-org/artifact-cli` | 已完成：`npx @tian-s-org/artifact-cli skill install`（GitHub Packages，私有） |
 
 `packages/canvas-core` 是前后端无关的画布引擎（视口数学、手势判定、点阵网格、取景），本地版与云端版共用；
-`packages/schema` 是画布协议（`canvas.json` 解析校验 + 新建骨架模板），本地服务端、云端 Worker、前端共用一份。
+`packages/schema` 是画布协议（`layout.json` 解析校验 + 新建骨架模板），本地服务端、云端 Worker、前端共用一份。
 原型技能（`skills/prototype`）将来引用 `canvas-core`，两边画布行为保持一份实现。
 
 ## 快速开始
@@ -93,7 +93,7 @@ artifact/
 
 ## 文件协议
 
-每个项目一个目录，`canvas.json` 说明这个项目有什么：
+每个项目一个目录，`layout.json` 说明这个项目有什么：
 
 ```json
 {
@@ -114,14 +114,14 @@ artifact/
 ```
 
 - `id`、画板 `id`：小写字母、数字、连字符。画板 id 同时是 `artboards/` 下的目录名。
-- 协议只描述画框；设计规范/色板如果要做，就画成一块画板，不写进 `canvas.json`。
+- 协议只描述画框；设计规范/色板如果要做，就画成一块画板，不写进 `layout.json`。
 - `file` 必须是 `artboards/<画板 id>/index.html`；不能穿出项目目录。
 - 未知字段原样保留，协议往后加东西不会打坏旧客户端；解析失败时画布停在上一份好数据并给出提示。
 - 画板内容是纯 HTML/CSS/SVG，不依赖画布实现；画布只负责把文件放进 iframe。
 
 ```
 <项目>/.artifact/
-├── canvas.json
+├── layout.json
 ├── context.md                  项目背景，给 Agent 看的
 ├── artboards/board-001/index.html
 ├── assets/{fonts,images}/
@@ -136,7 +136,7 @@ GET   /p/:pid                          画布（SPA）
 GET   /api/meta                         云端标识：cloud / gated / canWrite（前端据此选轮询还是 SSE）
 GET   /api/projects                     项目列表
 POST  /api/projects                     { id, name } 建骨架
-GET   /api/projects/:pid                canvas.json + 每块画板的 mtime + filesBase
+GET   /api/projects/:pid                layout.json + 每块画板的 mtime + filesBase
 POST  /api/projects/:pid/boards/:bid    { x, y } 原子写回画板位置
 POST  /api/projects/:pid/boards         { id, name, width?, height? } 新建画板
 GET   /api/projects/:pid/versions       版本列表
@@ -157,7 +157,7 @@ SSE 事件：`board:changed`（带 `boardId` 与 `mtime`）、`board:added`、`b
 内容寻址：`versions/index.json` 记版本清单，文件字节存在 `versions/blobs/<sha256 前 16>`，同内容只存一份。
 
 - 保存：画布工具栏「版本」面板，或 `pnpm versions save brand "配色定稿"`。
-- 恢复：整版恢复（画板 + `canvas.json`），或只恢复某一块画板——另一块和 `canvas.json` 都不碰。
+- 恢复：整版恢复（画板 + `layout.json`），或只恢复某一块画板——另一块和 `layout.json` 都不碰。
 - 恢复前自动留一份「恢复前自动备份」（`auto`）。
 - 恢复时内容已经一致的文件不重写：mtime 不动，画布不会白白重载那块画板。
 
@@ -167,7 +167,7 @@ Agent 产出的 HTML 按不可信处理，本地与云端同一套原则：
 
 - iframe `sandbox=""`（没有脚本、不透明源），父页面读不到画板内部，画板碰不到父页面。
 - 画板文档带 CSP：禁脚本、禁外部网络；图片/字体只允许文件源与本项目资源。
-- `/files` 只放行画板资源，`canvas.json`、`context.md`、`versions/` 一律 403。
+- `/files` 只放行画板资源，`layout.json`、`context.md`、`versions/` 一律 403。
 - 本地服务只绑 `127.0.0.1`；云端画板另走独立域名 `artifact-files.tianyw0.xyz`，
   路径里带项目 HMAC 令牌，那个源上没有页面也没有接口。细节见 `apps/cloud/README.md`。
 

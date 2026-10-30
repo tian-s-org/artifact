@@ -2,7 +2,7 @@
  * ProjectRepository 的文件系统实现。
  *
  * 并发约定：同一个项目的读-改-写一律进项目队列，避免「画布拖拽写回 x/y」和
- * 「Agent 同时改 canvas.json」互相覆盖。写入走原子 rename。
+ * 「Agent 同时改 layout.json」互相覆盖。写入走原子 rename。
  */
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -22,7 +22,7 @@ import { projectDir, resolveInside, singleProjectId } from '../paths'
 import { withProjectLock } from './locks'
 import type { CreateProjectInput, ProjectRepository } from './types'
 
-export const CANVAS_FILE = 'canvas.json'
+export const LAYOUT_FILE = 'layout.json'
 
 export class ProjectNotFoundError extends Error {
   readonly code = 'not-found'
@@ -59,7 +59,7 @@ export class FsProjectRepository implements ProjectRepository {
 
   private async readDoc(projectId: string): Promise<CanvasDoc> {
     const dir = this.dir(projectId)
-    const file = resolveInside(dir, CANVAS_FILE)
+    const file = resolveInside(dir, LAYOUT_FILE)
     let text: string
     try {
       text = await fs.readFile(file, 'utf8')
@@ -71,16 +71,16 @@ export class FsProjectRepository implements ProjectRepository {
 
   private async writeDoc(projectId: string, doc: CanvasDoc): Promise<void> {
     const dir = this.dir(projectId)
-    const file = resolveInside(dir, CANVAS_FILE)
+    const file = resolveInside(dir, LAYOUT_FILE)
     const tmp = path.join(path.dirname(file), `${path.basename(file)}.tmp-${process.pid}-${Date.now()}`)
     await fs.writeFile(tmp, formatCanvas(doc))
     await fs.rename(tmp, file)
   }
 
   async listProjects(): Promise<{ id: string; name: string; boardCount: number; mtime: number }[]> {
-    // 根目录自己就是项目（.artifact 直接放 canvas.json）：只有这一项
+    // 根目录自己就是项目（.artifact 直接放 layout.json）：只有这一项
     if (singleProjectId(this.root)) {
-      const file = path.join(this.root, CANVAS_FILE)
+      const file = path.join(this.root, LAYOUT_FILE)
       try {
         const stat = await fs.stat(file)
         const doc = parseCanvas(JSON.parse(await fs.readFile(file, 'utf8')))
@@ -99,7 +99,7 @@ export class FsProjectRepository implements ProjectRepository {
     const out: { id: string; name: string; boardCount: number; mtime: number }[] = []
     for (const item of items) {
       if (!item.isDirectory() || !isId(item.name)) continue
-      const file = path.join(this.root, item.name, CANVAS_FILE)
+      const file = path.join(this.root, item.name, LAYOUT_FILE)
       try {
         const stat = await fs.stat(file)
         const doc = parseCanvas(JSON.parse(await fs.readFile(file, 'utf8')))
@@ -117,7 +117,7 @@ export class FsProjectRepository implements ProjectRepository {
     if (typeof name !== 'string' || name.trim() === '') throw new CanvasError('invalid', '项目名称不能为空')
     const dir = this.dir(id)
     try {
-      await fs.access(path.join(dir, CANVAS_FILE))
+      await fs.access(path.join(dir, LAYOUT_FILE))
       throw new ProjectExistsError(id)
     } catch (err) {
       if (err instanceof ProjectExistsError) throw err

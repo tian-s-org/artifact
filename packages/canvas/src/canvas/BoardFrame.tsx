@@ -144,7 +144,7 @@ export function BoardFrame({ board, onCommit, onFocus, showSpecs }: Props) {
           <div className="board-missing flex h-full flex-col items-center justify-center gap-6 bg-[repeating-linear-gradient(-45deg,#fafafa,#fafafa_10px,#f2f2f2_10px,#f2f2f2_20px)] p-24 text-center text-ink-2">
             <b className="font-semibold text-ink">找不到画板文件</b>
             <span className="max-w-[460px] text-[12px] leading-[1.6]">
-              {board.id} 已登记在 canvas.json 里，但 artboards/{board.id}/index.html 不存在
+              {board.id} 已登记在 layout.json 里，但 artboards/{board.id}/index.html 不存在
             </span>
           </div>
         ) : (

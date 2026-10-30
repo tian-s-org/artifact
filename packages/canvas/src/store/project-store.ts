@@ -1,5 +1,5 @@
 /**
- * 一个项目一份小状态机：canvas.json + 每个画板的 mtime + SSE 连接状态。
+ * 一个项目一份小状态机：layout.json + 每个画板的 mtime + SSE 连接状态。
  *
  * 用 useSyncExternalStore 而不是状态库：这里只有低频数据变化，
  * 高频的视口变化在 canvas-core 里直接写 DOM，不进 React。
@@ -91,7 +91,7 @@ export class ProjectStore {
     this.refreshTimer = null
   }
 
-  /** canvas.json 连续变化时合并成一次请求 */
+  /** layout.json 连续变化时合并成一次请求 */
   private scheduleRefresh(): void {
     if (this.stopped) return
     if (this.refreshTimer !== null) window.clearTimeout(this.refreshTimer)
@@ -142,7 +142,7 @@ export class ProjectStore {
   }
 }
 
-/** canvas.json + mtime → 画板视图 */
+/** layout.json + mtime → 画板视图 */
 export function boardsToViews(
   projectId: string,
   canvas: CanvasDoc | null,

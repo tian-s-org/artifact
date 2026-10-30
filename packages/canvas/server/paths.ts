@@ -33,7 +33,7 @@ function isInside(parent: string, child: string): boolean {
   return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel))
 }
 
-/** 对外可以发的顶层目录。canvas.json / context.md / versions / 任何其它文件一律不发。 */
+/** 对外可以发的顶层目录。layout.json / context.md / versions / 任何其它文件一律不发。 */
 const SERVABLE_PREFIXES = ['artboards/', 'assets/', 'design-system/'] as const
 
 const MIME: Record<string, string> = {
@@ -80,10 +80,10 @@ export function resolveInside(root: string, rel: string): string {
   return abs
 }
 
-/** root 自己就是项目时（root/canvas.json 存在且 id 合法），返回它的 id；否则 null。 */
+/** root 自己就是项目时（root/layout.json 存在且 id 合法），返回它的 id；否则 null。 */
 export function singleProjectId(root: string): string | null {
   try {
-    const raw = JSON.parse(fs.readFileSync(path.join(root, 'canvas.json'), 'utf8')) as { id?: unknown }
+    const raw = JSON.parse(fs.readFileSync(path.join(root, 'layout.json'), 'utf8')) as { id?: unknown }
     return isId(raw.id) ? raw.id : null
   } catch {
     return null

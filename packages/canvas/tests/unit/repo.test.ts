@@ -14,7 +14,7 @@ async function withTempRoot<T>(fn: (root: string) => Promise<T>): Promise<T> {
   }
 }
 
-test('createProject 只建 canvas.json 和 context.md', async () => {
+test('createProject 只建 layout.json 和 context.md', async () => {
   await withTempRoot(async (root) => {
     const repo = new FsProjectRepository(root)
     const doc = await repo.createProject({ id: 'brand', name: 'Northstar' })
@@ -23,7 +23,7 @@ test('createProject 只建 canvas.json 和 context.md', async () => {
     assert.deepEqual(doc.boards, [])
     assert.equal('designSystem' in doc, false, '协议里不再有 designSystem')
 
-    for (const rel of ['canvas.json', 'context.md']) {
+    for (const rel of ['layout.json', 'context.md']) {
       const stat = await fs.stat(path.join(root, 'brand', rel))
       assert.ok(stat.isFile(), rel)
     }
@@ -31,7 +31,7 @@ test('createProject 只建 canvas.json 和 context.md', async () => {
   })
 })
 
-test('addBoard 写回 canvas.json 并生成骨架 HTML', async () => {
+test('addBoard 写回 layout.json 并生成骨架 HTML', async () => {
   await withTempRoot(async (root) => {
     const repo = new FsProjectRepository(root)
     await repo.createProject({ id: 'brand', name: 'Northstar' })
@@ -49,7 +49,7 @@ test('addBoard 写回 canvas.json 并生成骨架 HTML', async () => {
     assert.ok(html.includes('色彩'))
     assert.ok(html.includes('1024 × 768'))
 
-    const doc = JSON.parse(await fs.readFile(path.join(root, 'brand', 'canvas.json'), 'utf8'))
+    const doc = JSON.parse(await fs.readFile(path.join(root, 'brand', 'layout.json'), 'utf8'))
     assert.equal(doc.boards.length, 2)
 
     await assert.rejects(() => repo.addBoard('brand', { id: 'board-001', name: '重复' }), /画板已存在/)
@@ -90,13 +90,13 @@ test('并发写回不会互相覆盖（同一项目串行）', async () => {
   })
 })
 
-test('canvas.json 非法时 getProject 抛出带 code 的错误', async () => {
+test('layout.json 非法时 getProject 抛出带 code 的错误', async () => {
   await withTempRoot(async (root) => {
     const repo = new FsProjectRepository(root)
     await repo.createProject({ id: 'brand', name: 'Northstar' })
-    await fs.writeFile(path.join(root, 'brand', 'canvas.json'), '{ oops')
+    await fs.writeFile(path.join(root, 'brand', 'layout.json'), '{ oops')
     await assert.rejects(() => repo.getProject('brand'), SyntaxError)
-    await fs.writeFile(path.join(root, 'brand', 'canvas.json'), JSON.stringify({ protocol: 1, id: 'brand', name: 'x', boards: [{ id: '../x' }] }))
+    await fs.writeFile(path.join(root, 'brand', 'layout.json'), JSON.stringify({ protocol: 1, id: 'brand', name: 'x', boards: [{ id: '../x' }] }))
     await assert.rejects(() => repo.getProject('brand'), /boards\[0\]/)
   })
 })
@@ -106,7 +106,7 @@ test('listProjects 跳过坏项目', async () => {
     const repo = new FsProjectRepository(root)
     await repo.createProject({ id: 'brand', name: 'Northstar' })
     await fs.mkdir(path.join(root, 'broken'), { recursive: true })
-    await fs.writeFile(path.join(root, 'broken', 'canvas.json'), 'nothing here')
+    await fs.writeFile(path.join(root, 'broken', 'layout.json'), 'nothing here')
     await fs.mkdir(path.join(root, 'not-a-project'), { recursive: true })
     const list = await repo.listProjects()
     assert.deepEqual(list.map((p) => p.id), ['brand'])

@@ -1,6 +1,6 @@
 /** Worker 绑定与环境变量。secrets 用 `wrangler secret put` 写，不进仓库。 */
 export interface Env {
-  /** R2：项目文件（canvas.json、画板 HTML、资源、版本 blob） */
+  /** R2：项目文件（layout.json、画板 HTML、资源、版本 blob） */
   FILES: Bucket
   /** 前端静态资源 */
   ASSETS: { fetch(input: Request | string, init?: RequestInit): Promise<Response> }

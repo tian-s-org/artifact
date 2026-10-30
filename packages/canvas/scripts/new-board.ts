@@ -5,7 +5,7 @@
  *   pnpm new-board brand "包装刀版线"
  *   pnpm new-board brand "方案 C" --id board-004 --size 1440x900
  *
- * 直接读写项目目录（不依赖服务在跑）：改完 canvas.json 与骨架 HTML 后，
+ * 直接读写项目目录（不依赖服务在跑）：改完 layout.json 与骨架 HTML 后，
  * 正在运行的画布会通过文件监听自己刷新。
  */
 import path from 'node:path'

@@ -1,26 +1,22 @@
 {
   "name": "@tian-s-org/canvas",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "type": "module",
   "private": false,
-  "description": "画布：Agent 写静态 HTML 画板，浏览器只读查看；artifact push 把它放到云端",
+  "description": "画布：Agent 写静态 HTML 画板，artifact push 到云端，浏览器只读查看",
   "packageManager": "pnpm@10.27.0",
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild"]
   },
   "bin": {
-    "artifact": "./cli/artifact.mjs",
-    "artifact-canvas": "./bin/artifact-canvas.mjs"
+    "artifact": "./cli/artifact.mjs"
   },
   "exports": {
-    "./server": "./server/index.ts",
     "./package.json": "./package.json"
   },
   "files": [
-    "bin",
     "cli",
     "dist",
-    "server",
     "skills",
     "src",
     "index.html",
@@ -34,19 +30,12 @@
     "url": "git+https://github.com/tian-s-org/artifact.git"
   },
   "scripts": {
-    "dev": "node scripts/dev.mjs",
     "build": "tsc -p tsconfig.json && vite build",
-    "start": "tsx server/index.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "node --test --import tsx tests/unit/*.test.ts tests/cli/*.test.ts tests/worker/*.test.ts",
-    "test:e2e": "node --test --import tsx --test-concurrency=1 tests/e2e/*.test.ts",
-    "probe:zoom": "node --import tsx scripts/zoom-probe.ts",
-    "new-board": "node --import tsx scripts/new-board.ts",
-    "versions": "node --import tsx scripts/version.ts",
     "push": "node --import tsx worker/scripts/push.ts",
-    "smoke": "node --import tsx worker/scripts/smoke.ts",
     "deploy": "vite build && wrangler deploy",
-    "dev:worker": "wrangler dev"
+    "dev:worker": "wrangler dev --var DEV:1"
   },
   "dependencies": {
     "tsx": "^4.19.2"
@@ -57,7 +46,6 @@
     "@types/react": "^18.3.17",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
-    "playwright": "^1.59.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwindcss": "^4.3.3",

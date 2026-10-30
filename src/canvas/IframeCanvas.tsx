@@ -5,29 +5,26 @@ import { readDeepLink } from './deep-link'
 import type { BoardView } from './types'
 
 interface Props {
-  projectId: string
   boards: BoardView[]
-  onMove: (id: string, x: number, y: number) => void
   onOpen: (board: BoardView) => void
-  onOpenVersions: () => void
   /** 聚焦层盖上来时，工具条让开，免得两排字叠在一起 */
   overlayOpen: boolean
-  /** 「尺寸」开关：打开后悬停画框显示设计尺寸与坐标 */
+  /** 「尺寸」开关：打开后悬停画框显示设计尺寸 */
   showSpecs: boolean
   onToggleSpecs: () => void
 }
 
 const FIT_PADDING = 80
+const VIEW_KEY = 'artifact:view'
 
-/** 工具条上的三个按钮长得一样，尺寸写一份 */
+/** 工具条上的按钮长得一样，尺寸写一份 */
 const TOOL_BUTTON = 'h-24 cursor-pointer rounded-[6px] px-9 text-[#3c3c3c] hover:bg-black/6'
 
 function rects(boards: BoardView[]): Rect[] {
   return boards.map((b) => ({ x: b.x, y: b.y, width: b.width, height: b.height }))
 }
 
-/** 首次进画布的视角，优先级：深链 → 上次的视口 → 取景全部画板。
- *  返回是否真的定过视角。 */
+/** 首次进画布的视角，优先级：深链 → 上次的视口 → 取景全部画板。 */
 function applyInitialView(vp: Viewport, boards: BoardView[]): boolean {
   const deep = readDeepLink(window.location.search, boards)
   if (deep?.rect) {
@@ -46,16 +43,7 @@ function applyInitialView(vp: Viewport, boards: BoardView[]): boolean {
   return true
 }
 
-export function IframeCanvas({
-  projectId,
-  boards,
-  onMove,
-  onOpen,
-  onOpenVersions,
-  overlayOpen,
-  showSpecs,
-  onToggleSpecs,
-}: Props) {
+export function IframeCanvas({ boards, onOpen, overlayOpen, showSpecs, onToggleSpecs }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
   const worldRef = useRef<HTMLDivElement>(null)
   const pctRef = useRef<HTMLSpanElement>(null)
@@ -71,7 +59,7 @@ export function IframeCanvas({
 
     const vp = new Viewport(host, world, {
       gridSize: 24,
-      persistKey: `artifact:view:${projectId}`,
+      persistKey: VIEW_KEY,
       isBackground: (target) => target === host || target === world,
       onChange: (t) => {
         if (pctRef.current) pctRef.current.textContent = `${Math.round(t.scale * 100)}%`
@@ -80,10 +68,6 @@ export function IframeCanvas({
     vp.attach()
     vpRef.current = vp
 
-    const restored = applyInitialView(vp, boardsRef.current)
-    fittedRef.current = restored
-
-    /* 恢复下来的视口可能指向早就删掉的画板：给一帧时间挂完 iframe 再判断 */
     const timer = setTimeout(() => {
       vp.resetIfNothingVisible([...world.querySelectorAll('.board')])
     }, 300)
@@ -93,7 +77,7 @@ export function IframeCanvas({
       vp.destroy()
       vpRef.current = null
     }
-  }, [projectId])
+  }, [])
 
   /* 画板是异步加载的：第一帧可能是空的，等它们到了再做首次取景 */
   useEffect(() => {
@@ -114,13 +98,7 @@ export function IframeCanvas({
       <div ref={hostRef} className="canvas-host fixed inset-0 touch-none overflow-hidden overscroll-none">
         <div ref={worldRef} className="canvas-world absolute top-0 left-0 origin-top-left">
           {boards.map((board) => (
-            <BoardFrame
-              key={board.id}
-              board={board}
-              onCommit={onMove}
-              onFocus={onOpen}
-              showSpecs={showSpecs}
-            />
+            <BoardFrame key={board.id} board={board} onFocus={onOpen} showSpecs={showSpecs} />
           ))}
         </div>
       </div>
@@ -131,11 +109,8 @@ export function IframeCanvas({
           overlayOpen ? 'invisible' : ''
         }`}
       >
-        <span className="tool-hint px-6 text-[rgba(60,60,60,.55)]">拖拽平移 · 滚轮缩放 · 双击画板放大</span>
+        <span className="tool-hint px-6 text-[rgba(60,60,60,.55)]">拖拽平移 · 滚轮缩放 · 双击画框放大</span>
         <span className="tool-sep h-16 w-px bg-black/12" />
-        <button type="button" className={TOOL_BUTTON} onClick={onOpenVersions}>
-          版本
-        </button>
         <button
           type="button"
           className={`${TOOL_BUTTON} ${showSpecs ? 'bg-black/6 text-ink' : ''}`}

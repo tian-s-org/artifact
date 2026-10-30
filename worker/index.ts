@@ -2,10 +2,10 @@
  * 云端入口。两个域名共用一个 Worker：
  *
  *   artifact.tianyw0.xyz        应用 + /api（有门禁）
- *   artifact-files.tianyw0.xyz  只发 /f/<项目>/<令牌>/...（画板的沙箱源）
+ *   artifact-files.tianyw0.xyz  只发 /f/<令牌>/...（画板的沙箱源）
  *
- * 前端就是本地版那份 SPA，靠 `/api/projects/:pid` 返回的 filesBase 把画板 iframe
- * 指到文件源上；变更通知走轮询（Workers 上没有长连接）。
+ * 一个部署一个画布；前端靠 `/api/state` 返回的 filesBase 把画板 iframe 指到文件源上，
+ * 变更通知走轮询（Workers 上没有长连接）。
  */
 import { handleApi } from './api'
 import { ACCESS_COOKIE, checkAccess } from './auth'
@@ -13,9 +13,7 @@ import type { Env } from './env'
 import { handleFile } from './files'
 import { fail } from './http'
 import { blockedPage } from './page'
-import { CloudProjectRepository } from './repo'
 import { R2Storage } from './storage'
-import { CloudVersionStore } from './versions'
 
 const ONE_YEAR = 60 * 60 * 24 * 365
 
@@ -60,11 +58,7 @@ export default {
 
     let response: Response
     if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
-      const ctx = {
-        storage,
-        repo: new CloudProjectRepository(storage),
-        versions: new CloudVersionStore(storage),
-      }
+      const ctx = { storage }
       response = await handleApi(request, url, env, ctx, access)
     } else {
       response = withSecurityHeaders(await env.ASSETS.fetch(request))

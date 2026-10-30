@@ -2,30 +2,38 @@
 /**
  * artifact CLI
  *
- *   artifact-cli skill install [--target claude|omp|project|all] [--dir <技能库根>] [--force]
- *   artifact-cli skill list
- *   artifact-cli canvas [--projects <项目根>] [--port 4330] [--repo <artifact 仓库>]
+ *   artifact push [目录] [--url <地址>] [--key <密钥>]
+ *   artifact open [--url <地址>]
+ *   artifact skill install [--target claude|omp|project|all] [--dir <技能库根>] [--force]
+ *   artifact skill list
  */
+import { spawn } from 'node:child_process'
 import { cliVersion, installSkill, installedInfo, SKILL_NAME } from './install'
+import { push } from './push'
 import { customTarget, resolveTargets, skillTargets } from './targets'
-import { resolveCanvas, runCanvas } from './canvas'
 
-const USAGE = `artifact-cli —— Agent 原生设计画布的命令行
+const DEFAULT_URL = process.env.ARTIFACT_URL ?? 'https://artifact.tianyw0.xyz'
+
+const USAGE = `artifact —— 画布命令行
 
 用法：
-  artifact-cli skill install [--target claude|omp|project|all] [--dir <技能库根>] [--force]
+  artifact push [目录] [--url <地址>] [--key <密钥>]
+      把本地 .artifact/ 整包推到云端（默认当前目录的 .artifact）
+  artifact open [--url <地址>]
+      在浏览器里打开画布
+  artifact skill install [--target claude|omp|project|all] [--dir <技能库根>] [--force]
       把「${SKILL_NAME}」技能装进本地 Agent 技能库（默认 claude，all = 所有用户级技能库）
-  artifact-cli skill list
+  artifact skill list
       看每个技能库装没装、装的是哪一版
-  artifact-cli canvas [--projects <项目根>] [--port 4330] [--repo <artifact 仓库>]
-      起本地画布；项目根默认当前目录的 .artifact/，仓库里调试时用 --repo
+
+环境变量：
+  ARTIFACT_URL   画布地址（默认 ${DEFAULT_URL}）
+  ARTIFACT_KEY   访问密钥；push 需要它
 
 示例：
-  npx @tian-s-org/artifact-cli skill install
-  npx @tian-s-org/artifact-cli skill install --target all --force
-  npx @tian-s-org/artifact-cli canvas            # 默认读 ./.artifact
-
-（发布在 GitHub Packages：@tian-s-org/artifact-cli。没配 registry 时用仓库里的 packages/artifact-cli。）`
+  npx @tian-s-org/canvas push
+  npx @tian-s-org/canvas open
+  npx @tian-s-org/canvas skill install --target all`
 
 interface Parsed {
   command: string[]
@@ -35,7 +43,7 @@ interface Parsed {
 function parse(argv: string[]): Parsed {
   const command: string[] = []
   const flags = new Map<string, string | true>()
-  const valued = new Set(['target', 'dir', 'repo', 'projects', 'port'])
+  const valued = new Set(['target', 'dir', 'url', 'key'])
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i] ?? ''
     if (arg.startsWith('--')) {
@@ -88,16 +96,9 @@ async function skillList(): Promise<number> {
   return 0
 }
 
-async function canvas(parsed: Parsed): Promise<number> {
-  const portRaw = stringFlag(parsed, 'port')
-  const port = portRaw === undefined ? undefined : Number(portRaw)
-  if (port !== undefined && (!Number.isInteger(port) || port <= 0 || port > 65535)) {
-    throw new Error(`端口不合法：${portRaw}`)
-  }
-  const resolved = resolveCanvas({ repo: stringFlag(parsed, 'repo'), projects: stringFlag(parsed, 'projects') })
-  console.log(resolved.label)
-  console.log(`项目  ${resolved.projects ?? '（当前目录的 .artifact/）'}`)
-  return runCanvas(resolved, port)
+function openUrl(url: string): void {
+  const cmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open'
+  spawn(cmd, [url], { stdio: 'ignore', detached: true, shell: process.platform === 'win32' }).unref()
 }
 
 export async function main(argv: string[]): Promise<void> {
@@ -114,10 +115,21 @@ export async function main(argv: string[]): Promise<void> {
     const parsed = parse(argv)
     const [group, action] = parsed.command
 
-    if (group === 'skill' && action === 'install') process.exitCode = await skillInstall(parsed)
-    else if (group === 'skill' && (action === 'list' || action === undefined)) process.exitCode = await skillList()
-    else if (group === 'canvas') process.exitCode = await canvas(parsed)
-    else throw new Error(`未知命令：${parsed.command.join(' ')}（artifact-cli --help 看用法）`)
+    if (group === 'push') {
+      const key = stringFlag(parsed, 'key') ?? process.env.ARTIFACT_KEY ?? ''
+      if (key === '') throw new Error('缺少密钥：设 ARTIFACT_KEY，或加 --key')
+      const url = stringFlag(parsed, 'url') ?? DEFAULT_URL
+      await push({ dir: action, url, key })
+      process.exitCode = 0
+    } else if (group === 'open') {
+      openUrl(stringFlag(parsed, 'url') ?? DEFAULT_URL)
+    } else if (group === 'skill' && action === 'install') {
+      process.exitCode = await skillInstall(parsed)
+    } else if (group === 'skill' && (action === 'list' || action === undefined)) {
+      process.exitCode = await skillList()
+    } else {
+      throw new Error(`未知命令：${parsed.command.join(' ')}（artifact --help 看用法）`)
+    }
   } catch (err) {
     console.error(`错误：${(err as Error).message}`)
     process.exitCode = 1

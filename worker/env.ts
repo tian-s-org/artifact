@@ -12,6 +12,8 @@ export interface Env {
   APP_HOST: string
   /** 画板文件域名（artifact-files.tianyw0.xyz） */
   FILES_HOST: string
+  /** `wrangler dev` 时设为 1：文件源退回同源 /f/，不用真的第二域名 */
+  DEV?: string
 }
 
 /** R2Bucket 里我们真正用到的那一小部分，测试用内存实现替换 */

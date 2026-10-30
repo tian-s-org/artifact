@@ -1,200 +1,157 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import type { Access } from '../../worker/auth'
-import { filesToken, verifyFilesToken } from '../../worker/auth'
-import { handleApi } from '../../worker/api'
-import { isServableFile, isWritableFile } from '../../worker/paths'
-import { CloudProjectRepository } from '../../worker/repo'
-import { R2Storage } from '../../worker/storage'
-import { CloudVersionStore } from '../../worker/versions'
+import { handleApi, type ApiContext } from '../../worker/api'
+import { filesToken, verifyFilesToken, type Access } from '../../worker/auth'
 import { handleFile } from '../../worker/files'
+import { isServableFile, isWritableFile } from '../../worker/paths'
+import { R2Storage } from '../../worker/storage'
 import { MemoryBucket, makeEnv } from './fake'
 
 const WRITE: Access = { allowed: true, keyFromUrl: null, canWrite: true }
 const READONLY: Access = { allowed: true, keyFromUrl: null, canWrite: false }
 
-function ctxFor(bucket: MemoryBucket) {
-  const storage = new R2Storage(bucket)
-  return { storage, repo: new CloudProjectRepository(storage), versions: new CloudVersionStore(storage) }
+function ctxFor(bucket: MemoryBucket): ApiContext {
+  return { storage: new R2Storage(bucket) }
 }
 
-async function callApi(
-  bucket: MemoryBucket,
-  path: string,
-  init: RequestInit = {},
-  access: Access = WRITE,
-  envOverrides = {},
-) {
-  const env = makeEnv(bucket, envOverrides)
+function callApi(bucket: MemoryBucket, path: string, init: RequestInit = {}, access: Access = WRITE): Promise<Response> {
   const request = new Request(`https://artifact.test${path}`, init)
-  return handleApi(request, new URL(request.url), env, ctxFor(bucket), access)
+  return handleApi(request, new URL(request.url), makeEnv(bucket), ctxFor(bucket), access)
 }
 
-test('路径白名单：/f 只发 artboards/ 与 assets/，写入也拦住 versions 与点文件', () => {
+const LAYOUT = JSON.stringify({
+  protocol: 1,
+  id: 'demo',
+  name: '演示',
+  boards: [
+    { id: 'board-001', name: '首页', x: 0, y: 0, width: 1440, height: 900, file: 'artboards/board-001/index.html', order: 1 },
+  ],
+})
+
+test('路径白名单：/f 只发 artboards/ 与 assets/，写入只认白名单', () => {
   assert.equal(isServableFile('artboards/board-001/index.html'), true)
   assert.equal(isServableFile('assets/images/a.png'), true)
-  assert.equal(isServableFile('assets/css/base.css'), true)
-
   assert.equal(isServableFile('layout.json'), false)
   assert.equal(isServableFile('context.md'), false)
   assert.equal(isServableFile('design-system/rules.css'), false)
-  assert.equal(isServableFile('versions/index.json'), false)
-  assert.equal(isServableFile('artboards/.secret'), false)
-  assert.equal(isServableFile('artboards/../layout.json'), false)
-  assert.equal(isServableFile('artboards/a.bin'), false)
+  assert.equal(isServableFile('artboards/board-001/.secret.html'), false)
 
   assert.equal(isWritableFile('layout.json'), true)
   assert.equal(isWritableFile('context.md'), true)
   assert.equal(isWritableFile('artboards/board-001/index.html'), true)
+  assert.equal(isWritableFile('assets/css/base.css'), true)
   assert.equal(isWritableFile('versions/index.json'), false)
-  assert.equal(isWritableFile('other/x.txt'), false)
+  assert.equal(isWritableFile('../layout.json'), false)
 })
 
-test('文件令牌：同一项目稳定，改一个字符就失效', async () => {
-  const env = makeEnv(new MemoryBucket(), { SITE_KEY: 'site-key', FILES_SECRET: 'file-secret' })
-  const token = await filesToken('brand', env)
-  assert.equal(token.length, 32)
-  assert.equal(await filesToken('brand', env), token, '同一项目每次算出来应该一样')
-  assert.notEqual(await filesToken('other', env), token)
-  assert.equal(await verifyFilesToken('brand', token, env), true)
-  assert.equal(await verifyFilesToken('brand', `${token.slice(0, 31)}x`, env), false)
+test('文件令牌：同一个部署稳定，改一个字符就不过', async () => {
+  const env = makeEnv(new MemoryBucket(), { FILES_SECRET: 'secret' })
+  const token = await filesToken(env)
+  assert.equal(await verifyFilesToken(token, env), true)
+  assert.equal(await verifyFilesToken(`${token.slice(0, 31)}x`, env), false)
 })
 
-test('项目仓库：建项目写骨架，建画板自动摆位并写 HTML', async () => {
+test('空画布：/api/state 返回 layout=null', async () => {
   const bucket = new MemoryBucket()
-  const { repo } = ctxFor(bucket)
-  const doc = await repo.createProject({ id: 'brand', name: '品牌' })
-  assert.equal(doc.boards.length, 0)
-  assert.match(bucket.text('brand/context.md'), /项目背景/)
-  assert.equal(bucket.text('brand/design-system/tokens.json'), '', '不再脚手架设计规范文件')
-
-  const board = await repo.addBoard('brand', { id: 'board-001', name: '首页', width: 1200, height: 800 })
-  assert.equal(board.file, 'artboards/board-001/index.html')
-  assert.match(bucket.text('brand/artboards/board-001/index.html'), /首页/)
-
-  const second = await repo.addBoard('brand', { id: 'board-002', name: '方案二' })
-  assert.equal(second.x, 1200 + 160, '第二块画板摆在第一块右边，留 160 间距')
-
-  await assert.rejects(() => repo.createProject({ id: 'brand', name: '重复' }), /已存在/)
-  await assert.rejects(() => repo.addBoard('brand', { id: 'board-001', name: '重复' }), /已存在/)
-})
-
-test('版本：保存、改画板、恢复，另一块画板不动', async () => {
-  const bucket = new MemoryBucket()
-  const { repo, versions } = ctxFor(bucket)
-  await repo.createProject({ id: 'brand', name: '品牌' })
-  await repo.addBoard('brand', { id: 'board-001', name: '一' })
-  await repo.addBoard('brand', { id: 'board-002', name: '二' })
-
-  const one = 'artboards/board-001/index.html'
-  const two = 'artboards/board-002/index.html'
-  const saved = await versions.save('brand', '基线')
-  assert.match(saved.id, /^v\d{8}-\d{6}/)
-
-  const beforeTwo = bucket.map.get(`brand/${two}`)?.uploaded?.getTime()
-  await bucket.put(`brand/${one}`, '<html>改过的一</html>')
-  await bucket.put(`brand/${two}`, '<html>改过的二</html>')
-  const afterTwo = bucket.map.get(`brand/${two}`)?.uploaded?.getTime()
-  assert.notEqual(afterTwo, beforeTwo)
-
-  const result = await versions.restore('brand', saved.id)
-  assert.deepEqual(result.restored.sort(), ['board-001', 'board-002'])
-  assert.match(bucket.text(`brand/${one}`), /<h1>一<\/h1>/)
-  assert.match(bucket.text(`brand/${two}`), /<h1>二<\/h1>/)
-  assert.notEqual(bucket.map.get(`brand/${two}`)?.uploaded?.getTime(), afterTwo, '被改过的画板要写回来')
-
-  // 再恢复一次：内容和这一版已经一样，两个画板都不该重写
-  const settled = bucket.map.get(`brand/${two}`)?.uploaded?.getTime()
-  await versions.restore('brand', saved.id)
-  assert.equal(bucket.map.get(`brand/${two}`)?.uploaded?.getTime(), settled, '内容一致就不重写')
-
-  const index = await versions.list('brand')
-  assert.equal(index.length, 3)
-  assert.equal(index[0]?.auto, true, '恢复前自动留一份备份')
-})
-
-test('单画板恢复：只写那一块，layout.json 不动', async () => {
-  const bucket = new MemoryBucket()
-  const { repo, versions } = ctxFor(bucket)
-  await repo.createProject({ id: 'brand', name: '品牌' })
-  await repo.addBoard('brand', { id: 'board-001', name: '一' })
-  await repo.addBoard('brand', { id: 'board-002', name: '二' })
-  const saved = await versions.save('brand', '基线')
-
-  const canvasBefore = bucket.text('brand/layout.json')
-  await bucket.put('brand/artboards/board-001/index.html', '<html>一改</html>')
-  await bucket.put('brand/artboards/board-002/index.html', '<html>二改</html>')
-  await bucket.put('brand/layout.json', canvasBefore.replace('"name": "品牌"', '"name": "新名字"'))
-
-  const result = await versions.restore('brand', saved.id, { boardId: 'board-002' })
-  assert.deepEqual(result.restored, ['board-002'])
-  assert.match(bucket.text('brand/artboards/board-001/index.html'), /一改/, '别的画板保持现状')
-  assert.match(bucket.text('brand/layout.json'), /新名字/, 'layout.json 不该被恢复整版覆盖')
-})
-
-test('API：项目详情给出沙箱源地址，写文件要钥匙', async () => {
-  const bucket = new MemoryBucket()
-  const { repo } = ctxFor(bucket)
-  await repo.createProject({ id: 'brand', name: '品牌' })
-
-  const res = await callApi(bucket, '/api/projects/brand')
+  const res = await callApi(bucket, '/api/state')
   assert.equal(res.status, 200)
-  const payload = (await res.json()) as { filesBase: string; boards: unknown[] }
-  assert.match(payload.filesBase, /^https:\/\/artifact-files\.test\/f\/brand\/[0-9a-f]{32}$/)
+  const body = (await res.json()) as { layout: unknown; boards: unknown[] }
+  assert.equal(body.layout, null)
+  assert.deepEqual(body.boards, [])
+})
 
-  const denied = await callApi(
+test('推送整包 → state 里有 layout 与画板 mtime', async () => {
+  const bucket = new MemoryBucket()
+  const files = [
+    { path: 'layout.json', content: LAYOUT },
+    { path: 'artboards/board-001/index.html', content: '<!doctype html><title>首页</title>' },
+  ]
+  const push = await callApi(bucket, '/api/files', { method: 'POST', body: JSON.stringify({ files }) })
+  assert.equal(push.status, 200)
+
+  const res = await callApi(bucket, '/api/state')
+  const body = (await res.json()) as {
+    layout: { name: string }
+    boards: Array<{ id: string; mtime: number; exists: boolean }>
+    filesBase: string
+  }
+  assert.equal(body.layout.name, '演示')
+  assert.equal(body.boards[0]?.id, 'board-001')
+  assert.equal(body.boards[0]?.exists, true)
+  assert.ok(body.boards[0]?.mtime && body.boards[0].mtime > 0)
+  assert.match(body.filesBase, /\/f\/[a-f0-9]{32}$/)
+})
+
+test('第一次推送没带 layout.json 会被拒', async () => {
+  const bucket = new MemoryBucket()
+  const res = await callApi(bucket, '/api/files', {
+    method: 'POST',
+    body: JSON.stringify({ files: [{ path: 'artboards/board-001/index.html', content: '<!doctype html>' }] }),
+  })
+  assert.equal(res.status, 400)
+})
+
+test('写接口要写权限；路径不合法直接 400', async () => {
+  const bucket = new MemoryBucket()
+  const forbidden = await callApi(
     bucket,
-    '/api/projects/brand/file',
-    { method: 'POST', body: JSON.stringify({ path: 'artboards/board-001/index.html', content: '<html></html>' }) },
+    '/api/file?path=layout.json',
+    { method: 'POST', body: JSON.stringify({ content: LAYOUT }) },
     READONLY,
   )
-  assert.equal(denied.status, 403)
+  assert.equal(forbidden.status, 403)
 
-  const ok = await callApi(bucket, '/api/projects/brand/file', {
+  const bad = await callApi(bucket, '/api/file?path=../evil.html', {
     method: 'POST',
-    body: JSON.stringify({ path: 'artboards/board-001/index.html', content: '<html>hi</html>' }),
+    body: JSON.stringify({ content: 'x' }),
   })
-  assert.equal(ok.status, 200)
-  assert.equal(bucket.text('brand/artboards/board-001/index.html'), '<html>hi</html>')
+  assert.equal(bad.status, 400)
 
-  const bad = await callApi(bucket, '/api/projects/brand/file', {
+  const badLayout = await callApi(bucket, '/api/file?path=layout.json', {
     method: 'POST',
-    body: JSON.stringify({ path: 'layout.json', content: JSON.stringify({ protocol: 1, id: 'other', name: 'x', boards: [] }) }),
+    body: JSON.stringify({ content: '{oops' }),
   })
-  assert.equal(bad.status, 400, 'layout.json 的 id 必须和项目一致')
-
-  const escape = await callApi(bucket, '/api/projects/brand/file', {
-    method: 'POST',
-    body: JSON.stringify({ path: '../other/layout.json', content: '{}' }),
-  })
-  assert.equal(escape.status, 400)
-
-  // 删也用 POST（Cloudflare 挡 DELETE），靠 op=delete 区分
-  const removed = await callApi(bucket, '/api/projects/brand/file?path=artboards/board-001/index.html&op=delete', {
-    method: 'POST',
-  })
-  assert.equal(removed.status, 200)
-  assert.equal(bucket.text('brand/artboards/board-001/index.html'), '', '文件已删掉')
+  assert.equal(badLayout.status, 400)
 })
 
-test('文件服务：令牌不对 403，白名单外 403，画板 HTML 带沙箱 CSP', async () => {
+test('文件源：令牌不对 403；画板带沙箱 CSP，layout.json 取不到', async () => {
   const bucket = new MemoryBucket()
-  await bucket.put('brand/artboards/board-001/index.html', '<html>ok</html>')
-  const env = makeEnv(bucket)
-  const token = await filesToken('brand', env)
+  const env = makeEnv(bucket, { FILES_SECRET: 'secret' })
+  await callApi(bucket, '/api/files', {
+    method: 'POST',
+    body: JSON.stringify({
+      files: [
+        { path: 'layout.json', content: LAYOUT },
+        { path: 'artboards/board-001/index.html', content: '<!doctype html><title>首页</title>' },
+      ],
+    }),
+  })
+  const token = await filesToken(env)
+  const storage = new R2Storage(bucket)
 
-  const good = new Request(`https://artifact-files.test/f/brand/${token}/artboards/board-001/index.html`)
-  const res = await handleFile(good, new URL(good.url), env, new R2Storage(bucket))
-  assert.equal(res.status, 200)
-  const csp = res.headers.get('content-security-policy') ?? ''
-  assert.match(csp, /script-src 'none'/)
-  assert.match(csp, /sandbox/)
-  assert.match(csp, /img-src https:\/\/artifact-files\.test/)
-  assert.equal(res.headers.get('access-control-allow-origin'), '*')
+  const ok = await handleFile(
+    new Request(`https://artifact-files.test/f/${token}/artboards/board-001/index.html`),
+    new URL(`https://artifact-files.test/f/${token}/artboards/board-001/index.html`),
+    env,
+    storage,
+  )
+  assert.equal(ok.status, 200)
+  assert.match(ok.headers.get('content-security-policy') ?? '', /script-src 'none'/)
+  assert.equal(ok.headers.get('access-control-allow-origin'), '*')
 
-  const badToken = new Request(`https://artifact-files.test/f/brand/${'0'.repeat(32)}/artboards/board-001/index.html`)
-  assert.equal((await handleFile(badToken, new URL(badToken.url), env, new R2Storage(bucket))).status, 403)
+  const wrong = await handleFile(
+    new Request(`https://artifact-files.test/f/${'0'.repeat(32)}/artboards/board-001/index.html`),
+    new URL(`https://artifact-files.test/f/${'0'.repeat(32)}/artboards/board-001/index.html`),
+    env,
+    storage,
+  )
+  assert.equal(wrong.status, 403)
 
-  const outside = new Request(`https://artifact-files.test/f/brand/${token}/layout.json`)
-  assert.equal((await handleFile(outside, new URL(outside.url), env, new R2Storage(bucket))).status, 403)
+  const meta = await handleFile(
+    new Request(`https://artifact-files.test/f/${token}/layout.json`),
+    new URL(`https://artifact-files.test/f/${token}/layout.json`),
+    env,
+    storage,
+  )
+  assert.equal(meta.status, 403)
 })

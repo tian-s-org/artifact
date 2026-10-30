@@ -1,22 +1,27 @@
 /**
- * /api/* 路由。前六条与本地版逐条一致（前端同一份代码），
- * 后面几条是云端多出来的：Agent 直接读写项目文件、拉一棵树、整包导入。
+ * /api/* 路由。一个部署一个画布，接口全部是「相对画布根」的：
+ *
+ *   GET  /api/meta            门禁开着没有、能不能写
+ *   GET  /api/state           layout.json + 每块画板 mtime + filesBase（前端轮询）
+ *   GET  /api/tree            文件清单（agent 看云端有什么）
+ *   GET  /api/file?path=…     读单个文件
+ *   POST /api/file?path=…     写单个文件（删用 &op=delete）
+ *   POST /api/files           整包导入（CLI push 走这条）
+ *
+ * 写操作一律 POST：Cloudflare 在边缘就挡 PUT/PATCH/DELETE。
  */
-import { isId, parseCanvas, CanvasError } from '@tian-s-org/schema'
+import { CanvasError, parseCanvas } from '@tian-s-org/schema'
 import { filesToken, type Access } from './auth'
 import type { Env } from './env'
 import { errorResponse, HttpError, json, readJson } from './http'
-import { isWritableFile, mimeFor, projectKey } from './paths'
-import { LAYOUT_FILE, type CloudProjectRepository } from './repo'
+import { isWritableFile, mimeFor } from './paths'
 import type { R2Storage } from './storage'
-import { VERSIONS_INDEX, type CloudVersionStore } from './versions'
 
 export interface ApiContext {
-  repo: CloudProjectRepository
   storage: R2Storage
-  versions: CloudVersionStore
 }
 
+export const LAYOUT_FILE = 'layout.json'
 const MAX_FILE_BYTES = 8 * 1024 * 1024
 const MAX_IMPORT_FILES = 200
 
@@ -31,11 +36,13 @@ function encodeBody(content: string, encoding: unknown): Uint8Array {
   return encoding === 'base64' ? base64ToBytes(content) : new TextEncoder().encode(content)
 }
 
-function filesBase(request: Request, env: Env, projectId: string, token: string): string {
+async function filesBase(request: Request, env: Env): Promise<string> {
+  const token = await filesToken(env)
   const url = new URL(request.url)
-  const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
-  const origin = local ? url.origin : `https://${env.FILES_HOST}`
-  return `${origin}/f/${projectId}/${token}`
+  // wrangler dev 只绑一个域名：用相对路径走同源兜底；线上必须走独立文件源
+  const local = env.DEV === '1' || url.hostname === 'localhost' || url.hostname === '127.0.0.1'
+  if (local) return `/f/${token}`
+  return `https://${env.FILES_HOST}/f/${token}`
 }
 
 interface FileInput {
@@ -46,34 +53,27 @@ interface FileInput {
 
 async function writeOne(
   ctx: ApiContext,
-  projectId: string,
   input: FileInput,
-  options: { projectMustExist: boolean },
 ): Promise<{ path: string; size: number; mtime: number }> {
   const rel = input.path
-  if (typeof rel !== 'string' || !isWritableFile(rel)) throw new HttpError(400, 'invalid', `不能写这个路径：${String(rel)}`)
+  if (typeof rel !== 'string' || !isWritableFile(rel)) {
+    throw new HttpError(400, 'invalid', `不能写这个路径：${String(rel)}`)
+  }
   if (typeof input.content !== 'string') throw new HttpError(400, 'invalid', `缺少 content：${rel}`)
   const data = encodeBody(input.content, input.encoding)
   if (data.byteLength > MAX_FILE_BYTES) throw new HttpError(413, 'too-large', `文件太大（上限 8MB）：${rel}`)
 
-  if (options.projectMustExist && rel !== LAYOUT_FILE) {
-    if (!(await ctx.storage.exists(projectKey(projectId, LAYOUT_FILE)))) {
-      throw new HttpError(404, 'not-found', `项目不存在：${projectId}`)
-    }
-  }
   if (rel === LAYOUT_FILE) {
-    let doc
     try {
-      doc = parseCanvas(JSON.parse(new TextDecoder().decode(data)))
+      parseCanvas(JSON.parse(new TextDecoder().decode(data)))
     } catch (err) {
       if (err instanceof CanvasError) throw new HttpError(400, err.code, err.message)
       throw new HttpError(400, 'invalid', 'layout.json 不是合法 JSON')
     }
-    if (doc.id !== projectId) throw new HttpError(400, 'invalid', `layout.json 的 id（${doc.id}）和项目 id 不一致`)
   }
 
-  await ctx.storage.writeFile(projectKey(projectId, rel), data)
-  const version = await ctx.storage.getVersion(projectKey(projectId, rel))
+  await ctx.storage.writeFile(rel, data)
+  const version = await ctx.storage.getVersion(rel)
   return { path: rel, size: data.byteLength, mtime: version?.mtime ?? Date.now() }
 }
 
@@ -94,174 +94,80 @@ export async function handleApi(
       return json(200, { ok: true })
     }
 
-    // 前端启动时读一次：门禁开着没有、能不能写。
-    // 叫 meta 不叫 config：Cloudflare 的 WAF 会拦掉路径里带 config 的请求
-    if (segments[1] === 'meta' && segments.length === 2) {
+    const resource = segments[1]
+
+    if (resource === 'meta' && segments.length === 2) {
       if (method !== 'GET') throw new HttpError(405, 'method', '不支持的方法')
       return json(200, { cloud: true, gated: env.SITE_KEY !== undefined && env.SITE_KEY !== '', canWrite: access.canWrite })
     }
 
-    if (segments[1] !== 'projects') throw new HttpError(404, 'not-found', '未知资源')
-
-    // /api/projects
-    if (segments.length === 2) {
-      if (method === 'GET') return json(200, { projects: await ctx.repo.listProjects() })
-      if (method === 'POST') {
-        requireWrite(access)
-        const body = await readJson<Record<string, unknown>>(request)
-        const id = body.id
-        const name = body.name
-        if (!isId(id)) throw new HttpError(400, 'invalid', '项目 id 只能是小写字母、数字和连字符')
-        if (typeof name !== 'string' || name.trim() === '') throw new HttpError(400, 'invalid', '项目名称不能为空')
-        const doc = await ctx.repo.createProject({ id, name: name.trim() })
-        return json(201, { canvas: doc })
-      }
-      throw new HttpError(405, 'method', '不支持的方法')
-    }
-
-    const projectId = segments[2]
-    if (!projectId || !isId(projectId)) throw new HttpError(400, 'invalid', '项目 id 不合法')
-
-    // /api/projects/:pid
-    if (segments.length === 3) {
+    // 前端每 2.5 秒轮询一次：layout.json + 每块画板的 mtime + 文件源基地址
+    if (resource === 'state' && segments.length === 2) {
       if (method !== 'GET') throw new HttpError(405, 'method', '不支持的方法')
-      const canvas = await ctx.repo.getProject(projectId)
+      const layoutData = await ctx.storage.readFile(LAYOUT_FILE).catch(() => null)
+      const layoutVersion = await ctx.storage.getVersion(LAYOUT_FILE)
+      const layout = layoutData ? parseCanvas(JSON.parse(new TextDecoder().decode(layoutData))) : null
       const boards = []
-      for (const board of canvas.boards) {
-        const version = await ctx.storage.getVersion(projectKey(projectId, board.file))
+      for (const board of layout?.boards ?? []) {
+        const version = await ctx.storage.getVersion(board.file)
         boards.push({ id: board.id, mtime: version?.mtime ?? 0, exists: version !== null })
       }
-      const canvasVersion = await ctx.storage.getVersion(projectKey(projectId, LAYOUT_FILE))
-      const versionsVersion = await ctx.storage.getVersion(projectKey(projectId, VERSIONS_INDEX))
-      const token = await filesToken(projectId, env)
       return json(200, {
-        canvas,
+        layout,
         boards,
-        canvasMtime: canvasVersion?.mtime ?? 0,
-        versionsMtime: versionsVersion?.mtime ?? 0,
-        filesBase: filesBase(request, env, projectId, token),
+        layoutMtime: layoutVersion?.mtime ?? 0,
+        filesBase: await filesBase(request, env),
       })
     }
 
-    // /api/projects/:pid/boards
-    if (segments.length === 4 && segments[3] === 'boards') {
-      if (method !== 'POST') throw new HttpError(405, 'method', '不支持的方法')
-      requireWrite(access)
-      const body = await readJson<Record<string, unknown>>(request)
-      const boardId = body.id
-      const name = body.name
-      if (!isId(boardId)) throw new HttpError(400, 'invalid', '画板 id 只能是小写字母、数字和连字符')
-      if (typeof name !== 'string' || name.trim() === '') throw new HttpError(400, 'invalid', '画板名称不能为空')
-      const board = await ctx.repo.addBoard(projectId, {
-        id: boardId,
-        name: name.trim(),
-        width: typeof body.width === 'number' ? body.width : undefined,
-        height: typeof body.height === 'number' ? body.height : undefined,
-      })
-      return json(201, { board })
-    }
-
-    // /api/projects/:pid/boards/:bid
-    if (segments.length === 5 && segments[3] === 'boards') {
-      const boardId = segments[4] ?? ''
-      if (!isId(boardId)) throw new HttpError(400, 'invalid', '画板 id 不合法')
-      // POST 与 PATCH 都认：浏览器里前端统一用 POST（Cloudflare 会拦 PATCH）
-      if (method !== 'PATCH' && method !== 'POST') throw new HttpError(405, 'method', '不支持的方法')
-      requireWrite(access)
-      const body = await readJson<Record<string, unknown>>(request)
-      const { x, y } = body
-      if (typeof x !== 'number' || typeof y !== 'number') throw new HttpError(400, 'invalid', '需要数字 x 与 y')
-      const board = await ctx.repo.updateBoardPosition(projectId, boardId, x, y)
-      return json(200, { board })
-    }
-
-    // /api/projects/:pid/versions
-    if (segments.length === 4 && segments[3] === 'versions') {
-      if (method === 'GET') return json(200, { versions: await ctx.versions.list(projectId) })
-      if (method === 'POST') {
-        requireWrite(access)
-        const body = await readJson<Record<string, unknown>>(request)
-        const note = typeof body.note === 'string' ? body.note : ''
-        const version = await ctx.versions.save(projectId, note)
-        return json(201, { version })
-      }
-      throw new HttpError(405, 'method', '不支持的方法')
-    }
-
-    // /api/projects/:pid/versions/:vid/restore
-    if (segments.length === 6 && segments[3] === 'versions' && segments[5] === 'restore') {
-      if (method !== 'POST') throw new HttpError(405, 'method', '不支持的方法')
-      requireWrite(access)
-      const versionId = segments[4] ?? ''
-      const body = await readJson<Record<string, unknown>>(request)
-      const boardId = typeof body.boardId === 'string' ? body.boardId : undefined
-      if (boardId !== undefined && !isId(boardId)) throw new HttpError(400, 'invalid', '画板 id 不合法')
-      const result = await ctx.versions.restore(projectId, versionId, boardId ? { boardId } : {})
-      return json(200, result)
-    }
-
-    // /api/projects/:pid/tree —— Agent 看目录
-    if (segments.length === 4 && segments[3] === 'tree') {
+    if (resource === 'tree' && segments.length === 2) {
       if (method !== 'GET') throw new HttpError(405, 'method', '不支持的方法')
-      const prefix = `${projectId}/`
-      const entries = await ctx.storage.listFiles(prefix)
+      const entries = await ctx.storage.listFiles('')
       return json(200, {
-        files: entries.map((entry) => ({
-          path: entry.path.slice(prefix.length),
-          size: entry.size,
-          mtime: entry.mtime,
-        })),
+        files: entries.map((entry) => ({ path: entry.path, size: entry.size, mtime: entry.mtime })),
       })
     }
 
-    // /api/projects/:pid/file —— Agent 读/写/删单个文件
-    if (segments.length === 4 && segments[3] === 'file') {
+    if (resource === 'file' && segments.length === 2) {
       const rel = url.searchParams.get('path') ?? ''
       if (method === 'GET') {
         if (!isWritableFile(rel)) throw new HttpError(400, 'invalid', `读不到这个路径：${rel}`)
-        const data = await ctx.storage.readFile(projectKey(projectId, rel)).catch(() => null)
+        const data = await ctx.storage.readFile(rel).catch(() => null)
         if (!data) throw new HttpError(404, 'not-found', `文件不存在：${rel}`)
         return new Response(data, {
           status: 200,
           headers: { 'content-type': mimeFor(rel), 'cache-control': 'no-store' },
         })
       }
-      // 写用 POST（`op=delete` 表示删）：Cloudflare 在边缘就拦 PUT/PATCH/DELETE，
-      // 这两个分支留着是为了让 worker 测试与将来直连的场景也能用
-      if (method === 'PUT' || (method === 'POST' && url.searchParams.get('op') !== 'delete')) {
+      if (method === 'POST' && url.searchParams.get('op') !== 'delete') {
         requireWrite(access)
         const body = await readJson<FileInput>(request)
-        const written = await writeOne(ctx, projectId, { ...body, path: body.path ?? rel }, { projectMustExist: true })
-        return json(200, written)
+        return json(200, await writeOne(ctx, { ...body, path: body.path ?? rel }))
       }
-      if (method === 'DELETE' || (method === 'POST' && url.searchParams.get('op') === 'delete')) {
+      if (method === 'POST' && url.searchParams.get('op') === 'delete') {
         requireWrite(access)
         if (!isWritableFile(rel)) throw new HttpError(400, 'invalid', `不能删这个路径：${rel}`)
-        await ctx.storage.deleteFile(projectKey(projectId, rel))
+        await ctx.storage.deleteFile(rel)
         return json(200, { ok: true, path: rel })
       }
       throw new HttpError(405, 'method', '不支持的方法')
     }
 
-    // /api/projects/:pid/files —— 整包导入（CLI push 走这条）
-    if (segments.length === 4 && segments[3] === 'files') {
+    // 整包导入：CLI push 走这条；第一次推必须带 layout.json
+    if (resource === 'files' && segments.length === 2) {
       if (method !== 'POST') throw new HttpError(405, 'method', '不支持的方法')
       requireWrite(access)
-      const body = await readJson<{ files?: unknown; createProject?: unknown; name?: unknown }>(request)
+      const body = await readJson<{ files?: unknown }>(request)
       if (!Array.isArray(body.files) || body.files.length === 0) throw new HttpError(400, 'invalid', '缺少 files 数组')
       if (body.files.length > MAX_IMPORT_FILES) throw new HttpError(413, 'too-many', `一次最多 ${MAX_IMPORT_FILES} 个文件`)
 
-      const exists = await ctx.storage.exists(projectKey(projectId, LAYOUT_FILE))
-      if (!exists) {
-        if (body.createProject !== true) throw new HttpError(404, 'not-found', `项目不存在：${projectId}`)
-        const name = typeof body.name === 'string' && body.name.trim() !== '' ? body.name.trim() : projectId
-        await ctx.repo.createProject({ id: projectId, name })
+      const hasLayout = body.files.some((item) => (item as FileInput | null)?.path === LAYOUT_FILE)
+      if (!hasLayout && !(await ctx.storage.exists(LAYOUT_FILE))) {
+        throw new HttpError(400, 'invalid', '第一次推送必须包含 layout.json')
       }
 
       const written = []
-      for (const item of body.files) {
-        written.push(await writeOne(ctx, projectId, item as FileInput, { projectMustExist: false }))
-      }
+      for (const item of body.files) written.push(await writeOne(ctx, item as FileInput))
       return json(200, { files: written })
     }
 

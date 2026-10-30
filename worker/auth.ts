@@ -88,13 +88,13 @@ function filesSecret(env: Env): string {
   return env.FILES_SECRET && env.FILES_SECRET !== '' ? env.FILES_SECRET : (env.SITE_KEY ?? 'artifact-dev-secret')
 }
 
-/** 项目文件路径里的令牌：同一个项目稳定，换 FILES_SECRET 就全局失效 */
-export async function filesToken(projectId: string, env: Env): Promise<string> {
-  return (await hmac(filesSecret(env), `artifact-files:${projectId}`)).slice(0, 32)
+/** 文件路径里的令牌：一个部署一个画布，令牌稳定；换 FILES_SECRET 就全局失效 */
+export async function filesToken(env: Env): Promise<string> {
+  return (await hmac(filesSecret(env), 'artifact-files:canvas')).slice(0, 32)
 }
 
-export async function verifyFilesToken(projectId: string, token: string, env: Env): Promise<boolean> {
-  const expected = await filesToken(projectId, env)
+export async function verifyFilesToken(token: string, env: Env): Promise<boolean> {
+  const expected = await filesToken(env)
   if (token.length !== expected.length) return false
   let diff = 0
   for (let i = 0; i < expected.length; i += 1) diff |= token.charCodeAt(i) ^ expected.charCodeAt(i)

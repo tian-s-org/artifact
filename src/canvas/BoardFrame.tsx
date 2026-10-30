@@ -6,26 +6,13 @@ const FADE_MS = 120
 
 interface Props {
   board: BoardView
-  onCommit: (id: string, x: number, y: number) => void
   onFocus: (board: BoardView) => void
   /** 工具栏的「尺寸」开关：打开后悬停显示设计尺寸 */
   showSpecs: boolean
 }
 
-/** 一块画板：标签 + iframe。iframe 不接指针事件，拖拽、双击都落在这一层。
- *  拖动只在超过 4px 后才算数，避免一次点击把画板挪偏。 */
-export function BoardFrame({ board, onCommit, onFocus, showSpecs }: Props) {
-  const wrapRef = useRef<HTMLDivElement>(null)
-  const drag = useRef<{
-    pointerId: number
-    startX: number
-    startY: number
-    x0: number
-    y0: number
-    scale: number
-    moved: boolean
-  } | null>(null)
-  const [dragging, setDragging] = useState(false)
+/** 一块画框：标签 + iframe。画布只读，iframe 不接指针事件，双击落在这一层。 */
+export function BoardFrame({ board, onFocus, showSpecs }: Props) {
   const [hovered, setHovered] = useState(false)
 
   /* 换帧：src 变了先挂一张新 iframe 在旧帧上面，等它 load 完淡入，再撤掉旧的。
@@ -60,64 +47,13 @@ export function BoardFrame({ board, onCommit, onFocus, showSpecs }: Props) {
     }, FADE_MS)
   }
 
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return
-    const el = wrapRef.current
-    if (!el) return
-    const scale = el.getBoundingClientRect().width / board.width || 1
-    drag.current = {
-      pointerId: e.pointerId,
-      startX: e.clientX,
-      startY: e.clientY,
-      x0: board.x,
-      y0: board.y,
-      scale,
-      moved: false,
-    }
-    el.setPointerCapture(e.pointerId)
-  }
-
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const d = drag.current
-    if (!d || d.pointerId !== e.pointerId) return
-    const dx = e.clientX - d.startX
-    const dy = e.clientY - d.startY
-    if (!d.moved && Math.hypot(dx, dy) < 4) return
-    const el = wrapRef.current
-    if (!el) return
-    if (!d.moved) {
-      d.moved = true
-      setDragging(true)
-    }
-    el.style.left = `${d.x0 + dx / d.scale}px`
-    el.style.top = `${d.y0 + dy / d.scale}px`
-  }
-
-  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
-    const d = drag.current
-    if (!d || d.pointerId !== e.pointerId) return
-    drag.current = null
-    setDragging(false)
-    const el = wrapRef.current
-    if (el?.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId)
-    if (!d.moved || !el) return
-    const x = parseFloat(el.style.left)
-    const y = parseFloat(el.style.top)
-    if (Number.isFinite(x) && Number.isFinite(y)) onCommit(board.id, Math.round(x), Math.round(y))
-  }
-
   return (
     <div
-      ref={wrapRef}
       className="board absolute cursor-default"
       style={{ left: board.x, top: board.y, width: board.width, height: board.height }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
       onDoubleClick={() => onFocus(board)}
       onPointerEnter={(e) => {
-        // 按住左键是在拖画布/画框，别弹提示
+        // 按住左键是在拖画布，别弹提示
         if (e.buttons === 0) setHovered(true)
       }}
       onPointerLeave={() => setHovered(false)}
@@ -133,13 +69,7 @@ export function BoardFrame({ board, onCommit, onFocus, showSpecs }: Props) {
           <span>{board.name}</span>
         </span>
       )}
-      <div
-        className={`board-frame relative h-full w-full overflow-hidden bg-surface ${
-          dragging
-            ? 'shadow-[0_0_0_1px_rgba(0,0,0,.12),0_18px_40px_rgba(0,0,0,.18)]'
-            : 'shadow-[0_0_0_1px_rgba(0,0,0,.07),0_6px_18px_rgba(0,0,0,.09)]'
-        }`}
-      >
+      <div className="board-frame relative h-full w-full overflow-hidden bg-surface shadow-[0_0_0_1px_rgba(0,0,0,.07),0_6px_18px_rgba(0,0,0,.09)]">
         {board.missing ? (
           <div className="board-missing flex h-full flex-col items-center justify-center gap-6 bg-[repeating-linear-gradient(-45deg,#fafafa,#fafafa_10px,#f2f2f2_10px,#f2f2f2_20px)] p-24 text-center text-ink-2">
             <b className="font-semibold text-ink">找不到画板文件</b>

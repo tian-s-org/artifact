@@ -3,7 +3,6 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
-import { findRepoRoot, resolveCanvas } from '../../cli/canvas'
 import { installSkill, installedInfo, MARKER, SKILL_NAME } from '../../cli/install'
 import { customTarget, resolveTargets, skillTargets } from '../../cli/targets'
 
@@ -98,20 +97,4 @@ test('目标解析：默认 claude，all 只含用户级，未知 id 报错，--
   const labels = skillTargets(cwd, home).map((t) => t.label)
   assert.equal(labels.length, 3)
   assert.equal(SKILL_NAME, 'artifact-canvas')
-})
-
-test('找仓库与解析画布参数', async () => {
-  const repo = findRepoRoot(path.join(process.cwd(), 'src'))
-  assert.ok(repo, '从 tests/cli 往上应该能找到 artifact 仓库')
-  const resolved = resolveCanvas({ repo })
-  assert.equal(resolved.bin, path.join(repo, 'bin', 'artifact-canvas.mjs'))
-  assert.equal(resolved.projects, path.join(repo, 'projects'))
-
-  const empty = await tempDir('artifact-cli-empty-')
-  try {
-    assert.equal(findRepoRoot(empty), null)
-    assert.throws(() => resolveCanvas({ repo: empty }), /不像 artifact 仓库/)
-  } finally {
-    await fs.rm(empty, { recursive: true, force: true })
-  }
 })

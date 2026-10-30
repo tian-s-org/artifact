@@ -9,18 +9,25 @@ interface Props {
   onFocus: (board: BoardView) => void
   /** 工具栏的「尺寸」开关：打开后悬停显示设计尺寸 */
   showSpecs: boolean
+  /** 按住 ⌥ 时把指针让给画框内部，:hover 之类的交互态才看得到 */
+  interactive?: boolean
 }
 
-/** 一块画框：标签 + iframe。画布只读，iframe 不接指针事件，双击落在这一层。 */
+/** 一块画框：标签 + iframe。画布只读，默认 iframe 不接指针事件（不然拖动画布会被吃掉），
+ *  按住 ⌥ 或进聚焦层才把指针让进去。 */
+
+/** 名称自带编号（1.1 / 2. / 03）时，画布不再补自己的两位序号，免得「01 1.1 设计系统」叠两层 */
+const OWN_NUMBER = /^\s*\d+([.、]\d*)*\s*/
 /** 标签反向缩放：外层世界 zoom 是 s，标签乘 1/s，屏幕上始终 12.5px */
 const labelScale: CSSProperties = {
   transform: 'scale(var(--label-scale, 1))',
   transformOrigin: 'left bottom',
 }
 
-export function BoardFrame({ board, onFocus, showSpecs }: Props) {
+export function BoardFrame({ board, onFocus, showSpecs, interactive = false }: Props) {
   const [hovered, setHovered] = useState(false)
   const indexText = String(board.index).padStart(2, '0')
+  const showIndex = !OWN_NUMBER.test(board.name)
 
   /* 换帧：src 变了先挂一张新 iframe 在旧帧上面，等它 load 完淡入，再撤掉旧的。
      直接换 src 会白闪一下——旧文件先被清掉，新文件才画出来。 */
@@ -71,14 +78,14 @@ export function BoardFrame({ board, onFocus, showSpecs }: Props) {
           className="board-spec pointer-events-none absolute bottom-[calc(100%_+_6px)] left-0 rounded-[4px] bg-accent px-7 py-4 text-[12px] leading-none whitespace-nowrap text-white select-none"
           style={labelScale}
         >
-          {indexText} {board.name} · {board.width} × {board.height}
+          {showIndex ? `${indexText} ` : ''}{board.name} · {board.width} × {board.height}
         </span>
       ) : (
         <span
           className="board-label pointer-events-none absolute bottom-[calc(100%_+_6px)] left-[-4px] flex items-baseline gap-8 text-[12.5px] leading-none whitespace-nowrap text-ink-2 select-none"
           style={labelScale}
         >
-          <span className="board-index font-mono text-[11.5px] text-ink-3">{indexText}</span>
+          {showIndex && <span className="board-index font-mono text-[11.5px] text-ink-3">{indexText}</span>}
           <span>{board.name}</span>
         </span>
       )}
@@ -93,7 +100,7 @@ export function BoardFrame({ board, onFocus, showSpecs }: Props) {
         ) : (
           <>
             <iframe
-              className="board-doc pointer-events-none absolute inset-0 block h-full w-full bg-white"
+              className={`board-doc absolute inset-0 block h-full w-full bg-white ${interactive ? 'pointer-events-auto' : 'pointer-events-none'}`}
               title={board.name}
               src={shownSrc}
               sandbox=""
@@ -103,7 +110,9 @@ export function BoardFrame({ board, onFocus, showSpecs }: Props) {
             {incomingSrc !== null && (
               <iframe
                 key={incomingSrc}
-                className={`board-doc pointer-events-none absolute inset-0 block h-full w-full bg-white transition-opacity duration-[120ms] ease-out ${
+                className={`board-doc absolute inset-0 block h-full w-full bg-white transition-opacity duration-[120ms] ease-out ${
+                  interactive ? 'pointer-events-auto' : 'pointer-events-none'
+                } ${
                   fadingIn ? 'opacity-100' : 'opacity-0'
                 }`}
                 title={board.name}

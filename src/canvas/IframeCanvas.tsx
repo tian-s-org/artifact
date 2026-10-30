@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Viewport, type Rect } from '@tian-s-org/canvas-core'
 import { BoardFrame } from './BoardFrame'
 import { readDeepLink } from './deep-link'
@@ -44,6 +44,8 @@ function applyInitialView(vp: Viewport, boards: BoardView[]): boolean {
 }
 
 export function IframeCanvas({ boards, onOpen, overlayOpen, showSpecs, onToggleSpecs }: Props) {
+  /* 按住 ⌥ 才把指针让进画框：平时要留着力气拖画布 */
+  const [altDown, setAltDown] = useState(false)
   const hostRef = useRef<HTMLDivElement>(null)
   const worldRef = useRef<HTMLDivElement>(null)
   const pctRef = useRef<HTMLSpanElement>(null)
@@ -95,13 +97,32 @@ export function IframeCanvas({ boards, onOpen, overlayOpen, showSpecs, onToggleS
     vpRef.current?.fitToRects(rects(boardsRef.current), { padding: FIT_PADDING, maxScale: 1 })
   }, [])
 
+  useEffect(() => {
+    const sync = (e: KeyboardEvent) => setAltDown(e.altKey)
+    const clear = () => setAltDown(false)
+    window.addEventListener('keydown', sync)
+    window.addEventListener('keyup', sync)
+    window.addEventListener('blur', clear)
+    return () => {
+      window.removeEventListener('keydown', sync)
+      window.removeEventListener('keyup', sync)
+      window.removeEventListener('blur', clear)
+    }
+  }, [])
+
   return (
     <>
       {/* 网格由 canvas-core 直接写到 background 上，这里只管铺满屏幕 */}
       <div ref={hostRef} className="canvas-host fixed inset-0 touch-none overflow-hidden overscroll-none">
         <div ref={worldRef} className="canvas-world absolute top-0 left-0 origin-top-left">
           {boards.map((board) => (
-            <BoardFrame key={board.id} board={board} onFocus={onOpen} showSpecs={showSpecs} />
+            <BoardFrame
+              key={board.id}
+              board={board}
+              onFocus={onOpen}
+              showSpecs={showSpecs}
+              interactive={altDown}
+            />
           ))}
         </div>
       </div>

@@ -102,8 +102,9 @@ export function FocusOverlay({ board, onClose, onStep }: Props) {
         }`}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* 聚焦层里画板是唯一的东西，指针直接给进去，:hover 这些交互态才看得到 */}
         <iframe
-          className="pointer-events-none block"
+          className="block"
           title={board.name}
           src={board.src}
           sandbox=""

@@ -11,9 +11,9 @@ interface Props {
 }
 
 /** 缩略图自己的尺寸，跟画布内容无关 */
-const W = 196
-const H = 132
-const PAD = 8
+const W = 148
+const H = 100
+const PAD = 6
 
 function boundsOf(rects: Rect[]): Rect {
   if (rects.length === 0) return { x: 0, y: 0, width: 1, height: 1 }

@@ -12,6 +12,9 @@ interface Props {
   onOpenVersions: () => void
   /** 聚焦层盖上来时，工具条让开，免得两排字叠在一起 */
   overlayOpen: boolean
+  /** 「尺寸」开关：打开后悬停画框显示设计尺寸与坐标 */
+  showSpecs: boolean
+  onToggleSpecs: () => void
 }
 
 const FIT_PADDING = 80
@@ -43,7 +46,16 @@ function applyInitialView(vp: Viewport, boards: BoardView[]): boolean {
   return true
 }
 
-export function IframeCanvas({ projectId, boards, onMove, onOpen, onOpenVersions, overlayOpen }: Props) {
+export function IframeCanvas({
+  projectId,
+  boards,
+  onMove,
+  onOpen,
+  onOpenVersions,
+  overlayOpen,
+  showSpecs,
+  onToggleSpecs,
+}: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
   const worldRef = useRef<HTMLDivElement>(null)
   const pctRef = useRef<HTMLSpanElement>(null)
@@ -102,7 +114,13 @@ export function IframeCanvas({ projectId, boards, onMove, onOpen, onOpenVersions
       <div ref={hostRef} className="canvas-host fixed inset-0 touch-none overflow-hidden overscroll-none">
         <div ref={worldRef} className="canvas-world absolute top-0 left-0 origin-top-left">
           {boards.map((board) => (
-            <BoardFrame key={board.id} board={board} onCommit={onMove} onFocus={onOpen} />
+            <BoardFrame
+              key={board.id}
+              board={board}
+              onCommit={onMove}
+              onFocus={onOpen}
+              showSpecs={showSpecs}
+            />
           ))}
         </div>
       </div>
@@ -117,6 +135,15 @@ export function IframeCanvas({ projectId, boards, onMove, onOpen, onOpenVersions
         <span className="tool-sep h-16 w-px bg-black/12" />
         <button type="button" className={TOOL_BUTTON} onClick={onOpenVersions}>
           版本
+        </button>
+        <button
+          type="button"
+          className={`${TOOL_BUTTON} ${showSpecs ? 'bg-black/6 text-ink' : ''}`}
+          aria-pressed={showSpecs}
+          title="悬停画框时显示尺寸（类似 Figma）"
+          onClick={onToggleSpecs}
+        >
+          尺寸
         </button>
         <button type="button" className={TOOL_BUTTON} onClick={fit}>
           适应窗口

@@ -8,11 +8,13 @@ interface Props {
   board: BoardView
   onCommit: (id: string, x: number, y: number) => void
   onFocus: (board: BoardView) => void
+  /** 工具栏的「尺寸」开关：打开后悬停显示设计尺寸 */
+  showSpecs: boolean
 }
 
 /** 一块画板：标签 + iframe。iframe 不接指针事件，拖拽、双击都落在这一层。
  *  拖动只在超过 4px 后才算数，避免一次点击把画板挪偏。 */
-export function BoardFrame({ board, onCommit, onFocus }: Props) {
+export function BoardFrame({ board, onCommit, onFocus, showSpecs }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const drag = useRef<{
     pointerId: number
@@ -24,6 +26,7 @@ export function BoardFrame({ board, onCommit, onFocus }: Props) {
     moved: boolean
   } | null>(null)
   const [dragging, setDragging] = useState(false)
+  const [hovered, setHovered] = useState(false)
 
   /* 换帧：src 变了先挂一张新 iframe 在旧帧上面，等它 load 完淡入，再撤掉旧的。
      直接换 src 会白闪一下——旧文件先被清掉，新文件才画出来。 */
@@ -113,11 +116,23 @@ export function BoardFrame({ board, onCommit, onFocus }: Props) {
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
       onDoubleClick={() => onFocus(board)}
+      onPointerEnter={(e) => {
+        // 按住左键是在拖画布/画框，别弹提示
+        if (e.buttons === 0) setHovered(true)
+      }}
+      onPointerLeave={() => setHovered(false)}
     >
-      <span className="board-label pointer-events-none absolute bottom-[calc(100%_+_6px)] left-[-4px] flex items-baseline gap-8 text-[12px] leading-none whitespace-nowrap text-ink-2 select-none">
-        <span className="board-id font-mono text-[11px] text-ink-3">{board.id}</span>
-        <span>{board.name}</span>
-      </span>
+      {/* 平时是灰标签；打开「尺寸」并悬停时换成 Figma 式的蓝标签 */}
+      {showSpecs && hovered ? (
+        <span className="board-spec pointer-events-none absolute bottom-[calc(100%_+_6px)] left-0 rounded-[4px] bg-accent px-6 py-3 font-mono text-[11px] leading-none whitespace-nowrap text-white select-none">
+          {board.name} · {board.width} × {board.height}
+        </span>
+      ) : (
+        <span className="board-label pointer-events-none absolute bottom-[calc(100%_+_6px)] left-[-4px] flex items-baseline gap-8 text-[12px] leading-none whitespace-nowrap text-ink-2 select-none">
+          <span className="board-id font-mono text-[11px] text-ink-3">{board.id}</span>
+          <span>{board.name}</span>
+        </span>
+      )}
       <div
         className={`board-frame relative h-full w-full overflow-hidden bg-surface ${
           dragging
@@ -157,6 +172,10 @@ export function BoardFrame({ board, onCommit, onFocus }: Props) {
               />
             )}
           </>
+        )}
+
+        {showSpecs && hovered && (
+          <span className="pointer-events-none absolute inset-0 ring-1 ring-accent ring-inset" aria-hidden />
         )}
       </div>
     </div>

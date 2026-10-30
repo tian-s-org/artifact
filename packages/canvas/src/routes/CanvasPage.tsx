@@ -20,6 +20,26 @@ export function CanvasPage({ projectId }: Props) {
   )
   const [focusedId, setFocusedId] = useState<string | null>(null)
   const [versionsOpen, setVersionsOpen] = useState(false)
+  // 悬停显示尺寸：纯展示开关，记在本机
+  const [showSpecs, setShowSpecs] = useState(() => {
+    try {
+      return window.localStorage.getItem('artifact:specs') === '1'
+    } catch {
+      return false
+    }
+  })
+
+  const toggleSpecs = useCallback(() => {
+    setShowSpecs((value) => {
+      const next = !value
+      try {
+        window.localStorage.setItem('artifact:specs', next ? '1' : '0')
+      } catch {
+        // 隐私模式下存不了，不影响本次会话
+      }
+      return next
+    })
+  }, [])
 
   const focused = boards.find((b) => b.id === focusedId) ?? null
 
@@ -73,6 +93,8 @@ export function CanvasPage({ projectId }: Props) {
         onOpen={open}
         onOpenVersions={() => setVersionsOpen((open) => !open)}
         overlayOpen={focused !== null}
+        showSpecs={showSpecs}
+        onToggleSpecs={toggleSpecs}
       />
 
       {/* 左上角只有一个返回入口，不做侧栏；聚焦层盖上来时让开 */}

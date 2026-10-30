@@ -136,6 +136,39 @@ test('画布 E2E', async (t) => {
       await page.close()
     })
 
+    await t.test('「尺寸」开关：打开后悬停画框显示 Figma 式标签', async () => {
+      const page = await browser.newPage({ viewport: VIEW })
+      await page.goto(`${server.baseUrl}/p/e2e-canvas`)
+      await waitForBoards(page, 2)
+
+      const target = (await boardRects(page)).find((r) => r.id === 'board-002')
+      assert.ok(target, '找不到 board-002')
+      const cx = target.left + target.width / 2
+      const cy = target.top + target.height / 2
+
+      // 默认关：悬停不出现
+      await page.mouse.move(cx, cy)
+      await page.waitForTimeout(120)
+      assert.equal(await page.locator('.board-spec').count(), 0, '关闭时不该有尺寸标签')
+
+      // 打开开关，再移入画框
+      await page.click('.canvas-tools button:has-text("尺寸")')
+      await page.mouse.move(10, 10)
+      await page.mouse.move(cx, cy)
+      await page.waitForSelector('.board-spec', { timeout: 3000 })
+      const label = await page.textContent('.board-spec')
+      assert.ok(label?.includes('方案二'), `标签应带画板名：${label}`)
+      assert.ok(label?.includes('1440 × 900'), `标签应带设计尺寸：${label}`)
+
+      // 关掉后不再出现
+      await page.mouse.move(10, 10)
+      await page.click('.canvas-tools button:has-text("尺寸")')
+      await page.mouse.move(cx, cy)
+      await page.waitForTimeout(120)
+      assert.equal(await page.locator('.board-spec').count(), 0, '关闭后不该再有尺寸标签')
+      await page.close()
+    })
+
     await t.test('聚焦层进全屏：只剩查看器横栏，Esc 先退回聚焦层再关掉', async () => {
       const page = await browser.newPage({ viewport: VIEW })
       await page.goto(`${server.baseUrl}/p/e2e-canvas`)

@@ -1,12 +1,14 @@
 {
   "name": "@tian-s-org/canvas",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "private": false,
   "description": "画布：Agent 写静态 HTML 画板，artifact push 到云端，浏览器只读查看",
   "packageManager": "pnpm@10.27.0",
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   },
   "bin": {
     "artifact": "./cli/artifact.mjs"
